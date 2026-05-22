@@ -19,3 +19,4 @@ DEVELOPMENT.md
 *.sln
 *.sw?
 .vercel
+toasty-package/
