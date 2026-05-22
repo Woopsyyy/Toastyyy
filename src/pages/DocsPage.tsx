@@ -1,233 +1,225 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { 
   BookOpen, 
-  Search, 
   ChevronRight, 
   Terminal, 
   Layers, 
   Zap, 
-  Settings,
-  ExternalLink,
-  Code2,
-  Copy
+  Copy,
+  Check,
+  Cpu,
+  BookMarked
 } from 'lucide-react'
+import ToastMascot from '../components/ui/ToastMascot'
 
-const sections = [
+const docSections = [
   {
     title: 'Getting Started',
     items: ['Introduction', 'Installation', 'Quick Start', 'Styling']
   },
   {
     title: 'Components',
-    items: ['Toast Provider', 'Toast Method', 'Custom Toasts', 'React Nodes']
+    items: ['ToastProvider', 'useToasts Hook', 'Custom Toasts', 'Timing API']
   },
   {
     title: 'Animations',
-    items: ['Motion Presets', 'Spring Config', 'Exit Transitions']
-  },
-  {
-    title: 'Advanced',
-    items: ['Queue System', 'Accessibility', 'Methods API', 'Hooks']
+    items: ['Spring Physics', 'Exit Controls', 'GPU Presets']
   }
 ]
 
 export default function DocsPage() {
-  return (
-    <div className="flex-1 flex container-wide overflow-hidden min-h-screen">
-      {/* Docs Sidebar */}
-      <aside className="w-64 border-r border-border hidden lg:flex flex-col py-12 sticky top-20 h-[calc(100vh-80px)]">
-        <div className="px-6 mb-8">
-          <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-3 group-focus-within:text-brand-500 transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Search docs..."
-              className="w-full pl-9 pr-4 py-2 bg-surface-2 border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-border bg-white text-[9px] font-bold text-text-3">
-              ⌘ K
-            </div>
-          </div>
-        </div>
+  const [activeItem, setActiveItem] = useState('Introduction')
+  const [copiedInstall, setCopiedInstall] = useState(false)
+  const [copiedQuick, setCopiedQuick] = useState(false)
 
-        <nav className="flex-1 overflow-y-auto px-6 custom-scrollbar">
-          {sections.map((section) => (
-            <div key={section.title} className="mb-8">
-              <h4 className="text-[11px] font-bold text-text-3 uppercase tracking-wider mb-4 px-2">{section.title}</h4>
+  const handleCopyInstall = () => {
+    navigator.clipboard.writeText('npm install toastyyy')
+    setCopiedInstall(true)
+    setTimeout(() => setCopiedInstall(false), 2000)
+  }
+
+  const handleCopyQuick = () => {
+    navigator.clipboard.writeText(`import { ToastProvider } from 'toastyyy'
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <MainApp />
+    </ToastProvider>
+  )
+}`)
+    setCopiedQuick(true)
+    setTimeout(() => setCopiedQuick(false), 2000)
+  }
+
+  return (
+    <div className="container-wide flex flex-col lg:flex-row relative z-10 px-6 gap-8 min-h-screen">
+      <aside className="w-full lg:w-64 flex-shrink-0 lg:sticky lg:top-24 h-auto lg:h-[calc(100vh-140px)] overflow-y-auto pr-4 py-8 border-b lg:border-b-0 lg:border-r border-border-strong select-none">
+        <div className="mb-6 flex items-center gap-2 px-3">
+          <BookMarked className="w-4 h-4 text-accent" />
+          <span className="text-[10px] font-extrabold text-text-2 uppercase tracking-widest">Recipe Book</span>
+        </div>
+        <nav className="space-y-6">
+          {docSections.map((section) => (
+            <div key={section.title} className="space-y-2">
+              <h4 className="text-[9px] font-black text-text-3 uppercase tracking-wider px-3">{section.title}</h4>
               <ul className="space-y-1">
-                {section.items.map((item, i) => (
-                  <li key={item}>
-                    <button className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${i === 0 && section.title === 'Getting Started' ? 'bg-brand-50 text-brand-600 font-bold' : 'text-text-2 hover:bg-surface-2 hover:text-text'}`}>
-                      {item}
-                    </button>
-                  </li>
-                ))}
+                {section.items.map((item) => {
+                  const isActive = activeItem === item
+                  return (
+                    <li key={item}>
+                      <button 
+                        onClick={() => setActiveItem(item)}
+                        className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all relative ${isActive ? 'text-accent' : 'text-text-2 hover:bg-surface-2 hover:text-text'}`}
+                      >
+                        {item}
+                        {isActive && (
+                          <motion.div
+                            layoutId="active-doc-indicator"
+                            className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-accent rounded-full"
+                          />
+                        )}
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           ))}
         </nav>
       </aside>
 
-      {/* Docs Content */}
-      <main className="flex-1 lg:pl-16 py-12 lg:py-20 max-w-3xl overflow-y-auto">
+      <main className="flex-1 max-w-3xl py-8 lg:py-12">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          key={activeItem}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="space-y-12"
         >
-          <div className="flex items-center gap-2 text-brand-600 mb-6">
-            <BookOpen className="w-5 h-5" />
-            <span className="text-sm font-bold uppercase tracking-widest">Documentation</span>
-          </div>
-          
-          <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight text-text mb-6">Introduction</h1>
-          
-          <p className="text-xl text-text-2 mb-12 leading-relaxed">
-            Toastyyy is a performance-first, motion-heavy notification library for React. 
-            It's designed to give your users clear, beautiful feedback while keeping 
-            implementation dangerously simple.
-          </p>
-
-          <div className="grid sm:grid-cols-2 gap-6 mb-16">
-            <div className="p-6 rounded-2xl border border-border bg-surface shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-brand-600 mb-4">
-                <Zap className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold mb-2">Built with Motion</h3>
-              <p className="text-sm text-text-2 leading-relaxed">Powered by Framer Motion for hardware-accelerated 60fps interactions.</p>
+          <div>
+            <div className="flex items-center gap-1.5 text-accent-2 mb-4">
+              <BookOpen className="w-4 h-4" />
+              <span className="text-[10px] font-extrabold uppercase tracking-widest">Documentation • {activeItem}</span>
             </div>
-            <div className="p-6 rounded-2xl border border-border bg-surface shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 mb-4">
-                <Layers className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold mb-2">Fully Accessible</h3>
-              <p className="text-sm text-text-2 leading-relaxed">WAI-ARIA compliant out of the box with keyboard navigation and screen reader support.</p>
-            </div>
-          </div>
-
-          <hr className="border-border mb-16" />
-
-          <section id="installation" className="mb-16">
-            <h2 className="text-3xl font-bold mb-6 tracking-tight flex items-center gap-3">
-              Installation
-              <a href="#installation" className="text-text-3 opacity-0 hover:opacity-100 transition-opacity"><ChevronRight className="w-5 h-5 rotate-90" /></a>
-            </h2>
-            <p className="text-text-2 mb-6">Install the package from your favorite package manager.</p>
             
-            <div className="bg-slate-900 rounded-xl p-5 mb-12 font-mono text-sm relative group">
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-slate-700" />
-                  <div className="w-2 h-2 rounded-full bg-slate-700" />
-                </div>
-                <button className="text-slate-500 hover:text-white transition-colors">
-                  <Copy className="w-4 h-4" />
-                </button>
-              </div>
-              <code className="text-slate-300">
-                <span className="text-brand-400">npm</span> install toastyyy
-              </code>
-            </div>
+            <h1 className="text-4xl font-extrabold tracking-tight text-text leading-tight mb-4">
+              {activeItem}
+            </h1>
+            <p className="text-text-2 text-sm md:text-base leading-relaxed">
+              Discover how to inject delightful notifications into your software. We make hardware-accelerated layouts, micro-feedbacks, and elastic animations straightforward.
+            </p>
+          </div>
 
-            <div className="bg-brand-50 border border-brand-100 rounded-2xl p-6 flex gap-4">
-              <div className="flex-shrink-0 mt-1">
-                <div className="w-6 h-6 rounded-full bg-brand-500 text-white flex items-center justify-center text-[10px] font-bold">!</div>
-              </div>
+          <div className="grid sm:grid-cols-2 gap-6">
+            <div className="p-5 rounded-2xl border border-border-strong bg-white/40 shadow-sm flex flex-col justify-between">
               <div>
-                <h4 className="text-brand-800 font-bold text-sm mb-1">Requirement</h4>
-                <p className="text-brand-700 text-sm leading-relaxed">
-                  Toastyyy requires <span className="font-bold">React 18.0.0</span> or later and <span className="font-bold">framer-motion 10.0.0</span> or later.
+                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent mb-4">
+                  <Zap className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-bold text-text mb-2">High Performance</h3>
+                <p className="text-text-2 text-xs leading-relaxed">
+                  Leverages Framer Motion physics for zero-layout-shift, GPU-buffered 60fps animations.
                 </p>
               </div>
             </div>
-          </section>
 
-          <section id="quick-start" className="mb-16">
-            <h2 className="text-3xl font-bold mb-6 tracking-tight">Quick Start</h2>
-            <p className="text-text-2 mb-8 leading-relaxed">
-              To get started, wrap your root application component with the <code className="px-1.5 py-0.5 rounded bg-surface-2 text-brand-600 font-bold text-sm">ToastProvider</code>.
+            <div className="p-5 rounded-2xl border border-border-strong bg-white/40 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent mb-4">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-bold text-text mb-2">Fully Tailored</h3>
+                <p className="text-text-2 text-xs leading-relaxed">
+                  Easily inject custom React Nodes, timing parameters, progress gauges, and border shapes.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-5 rounded-[24px] border border-accent/15 bg-gradient-to-tr from-accent/5 to-transparent flex gap-4 items-center">
+            <div className="flex-shrink-0">
+              <ToastMascot size={70} mood="focused" interactive={true} />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-xs font-extrabold text-accent-2 mb-1">Mascot Chef Pro-Tip</h4>
+              <p className="text-text-2 text-xs leading-relaxed">
+                Ensure you install both <span className="font-bold">react (18.x)</span> and <span className="font-bold">framer-motion</span> as peer dependencies for optimal elastic rendering.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-xl font-extrabold text-text tracking-tight flex items-center gap-2">
+              <Terminal className="w-5 h-5 text-accent" />
+              Installation Command
+            </h2>
+            <p className="text-text-2 text-xs md:text-sm leading-relaxed">
+              Add the library file dependencies via npm. Wait for the loading cycle to fully compile.
+            </p>
+            
+            <div className="bg-[#12131a] rounded-2xl p-4 flex items-center justify-between font-mono text-[11px] text-white/90 border border-white/5 select-all">
+              <div className="flex items-center gap-2">
+                <span className="text-accent">$</span>
+                <span>npm install toastyyy</span>
+              </div>
+              <button 
+                onClick={handleCopyInstall}
+                className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-all select-none"
+              >
+                {copiedInstall ? <Check className="w-3.5 h-3.5 text-accent" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-xl font-extrabold text-text tracking-tight flex items-center gap-2">
+              <Cpu className="w-5 h-5 text-accent" />
+              Quick Application Wrap
+            </h2>
+            <p className="text-text-2 text-xs md:text-sm leading-relaxed">
+              Import the provider and wrap your React root tree context. This sets up the workspace queue globally.
             </p>
 
-            <div className="bg-slate-900 rounded-xl p-6 mb-8 font-mono text-[13px] text-slate-300 shadow-xl">
-              <pre className="overflow-x-auto">
+            <div className="bg-[#12131a] rounded-2xl overflow-hidden border border-white/5 shadow-xl flex flex-col">
+              <div className="px-4 py-2 bg-white/5 border-b border-white/5 flex justify-between items-center select-none">
+                <span className="text-[9px] font-extrabold text-white/40 tracking-wider uppercase">App.tsx</span>
+                <button 
+                  onClick={handleCopyQuick}
+                  className="p-1 rounded hover:bg-white/10 text-white/40 hover:text-white transition-all"
+                >
+                  {copiedQuick ? <Check className="w-3 h-3 text-accent" /> : <Copy className="w-3 h-3" />}
+                </button>
+              </div>
+              <pre className="p-4 font-mono text-[11px] text-white/80 overflow-x-auto leading-relaxed select-all">
                 <code>
-                  <span className="text-brand-400">import</span> {'{ ToastProvider }'} <span className="text-brand-400">from</span> <span className="text-emerald-400">'toastyyy'</span><br /><br />
-                  <span className="text-brand-400">export default function</span> <span className="text-amber-400">App</span>() {'{'}<br />
-                  &nbsp;&nbsp;<span className="text-brand-400">return</span> (<br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;&lt;<span className="text-indigo-400">ToastProvider</span>&gt;<br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span className="text-indigo-400">Main</span> /&gt;<br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;&lt;/<span className="text-indigo-400">ToastProvider</span>&gt;<br />
-                  &nbsp;&nbsp;)<br />
-                  {'}'}
+                  {`import { ToastProvider } from 'toastyyy'
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <MainApp />
+    </ToastProvider>
+  )
+}`}
                 </code>
               </pre>
             </div>
+          </div>
 
-            <p className="text-text-2 mb-8 leading-relaxed">
-              Now you can use the <code className="px-1.5 py-0.5 rounded bg-surface-2 text-brand-600 font-bold text-sm">toast</code> hook or object anywhere in your app.
-            </p>
-
-            <div className="bg-slate-900 rounded-xl p-6 mb-8 font-mono text-[13px] text-slate-300 shadow-xl">
-              <pre className="overflow-x-auto">
-                <code>
-                  <span className="text-brand-400">import</span> {'{ toast }'} <span className="text-brand-400">from</span> <span className="text-emerald-400">'toastyyy'</span><br /><br />
-                  <span className="text-brand-400">function</span> <span className="text-amber-400">MyComponent</span>() {'{'}<br />
-                  &nbsp;&nbsp;<span className="text-brand-400">const</span> <span className="text-blue-400">handleClick</span> = () =&gt; {'{'}<br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-amber-400">toast</span>.<span className="text-blue-400">success</span>(<span className="text-emerald-400">'Operation successful!'</span>)<br />
-                  &nbsp;&nbsp;{'}'}<br /><br />
-                  &nbsp;&nbsp;<span className="text-brand-400">return</span> &lt;<span className="text-indigo-400">button</span> <span className="text-amber-400">onClick</span>={'{handleClick}'}&gt;Fire!&lt;/<span className="text-indigo-400">button</span>&gt;<br />
-                  {'}'}
-                </code>
-              </pre>
-            </div>
-          </section>
-
-          <div className="flex items-center justify-between pt-12 border-t border-border mb-20">
-            <button className="flex flex-col items-start gap-1 group">
-              <span className="text-[10px] font-bold text-text-3 uppercase tracking-widest">Previous</span>
-              <span className="text-brand-600 font-bold group-hover:translate-x-[-4px] transition-transform flex items-center gap-1">
-                <ChevronRight className="w-4 h-4 rotate-180" />
-                Introduction
-              </span>
+          <div className="flex items-center justify-between pt-8 border-t border-border-strong select-none">
+            <button className="flex items-center gap-1.5 text-xs font-bold text-accent group">
+              <ChevronRight className="w-4 h-4 rotate-180 transition-transform group-hover:-translate-x-0.5" />
+              Prev Section
             </button>
-            <button className="flex flex-col items-end gap-1 group">
-              <span className="text-[10px] font-bold text-text-3 uppercase tracking-widest">Next</span>
-              <span className="text-brand-600 font-bold group-hover:translate-x-[4px] transition-transform flex items-center gap-1">
-                Installation
-                <ChevronRight className="w-4 h-4" />
-              </span>
+            <button className="flex items-center gap-1.5 text-xs font-bold text-accent group">
+              Next Section
+              <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </button>
           </div>
         </motion.div>
       </main>
-
-      {/* Right Sidebar Table of Contents */}
-      <aside className="w-64 hidden xl:flex flex-col py-20 sticky top-20 h-[calc(100vh-80px)] px-8">
-        <h4 className="text-[11px] font-bold text-text-3 uppercase tracking-wider mb-6">On this page</h4>
-        <ul className="space-y-4 border-l border-border">
-          {['Overview', 'Performance', 'Accessibility', 'Installation', 'Quick Start'].map((item, i) => (
-            <li key={item} className="pl-4">
-              <a 
-                href={`#${item.toLowerCase().replace(' ', '-')}`}
-                className={`text-xs font-medium transition-colors hover:text-brand-600 ${i === 0 ? 'text-brand-600 font-bold' : 'text-text-3'}`}
-              >
-                {item}
-              </a>
-            </li>
-          ))}
-        </ul>
-        
-        <div className="mt-auto pb-12">
-          <div className="p-5 rounded-2xl bg-surface-2 border border-border">
-            <h5 className="text-xs font-bold mb-2">Need help?</h5>
-            <p className="text-[11px] text-text-3 mb-4 leading-relaxed">Can't find what you're looking for? Join our community on Discord.</p>
-            <button className="flex items-center gap-2 text-[11px] font-bold text-brand-600 hover:gap-3 transition-all">
-              Chat with us
-              <ExternalLink className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-      </aside>
     </div>
   )
 }

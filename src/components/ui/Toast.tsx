@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from 'lucide-react'
+import { CheckCircle2, AlertCircle, Info, AlertTriangle, X, Loader2, Sparkles } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
-export type ToastType = 'default' | 'success' | 'error' | 'warning' | 'info'
+export type ToastType = 'default' | 'success' | 'error' | 'warning' | 'info' | 'loading' | 'promise'
 
 interface ToastProps {
   id: string
@@ -20,6 +20,8 @@ const icons = {
   error: <AlertCircle className="w-5 h-5 text-error" />,
   warning: <AlertTriangle className="w-5 h-5 text-warning" />,
   info: <Info className="w-5 h-5 text-info" />,
+  loading: <Loader2 className="w-5 h-5 text-accent animate-spin" />,
+  promise: <Sparkles className="w-5 h-5 text-purple-500 animate-pulse" />,
 }
 
 export default function Toast({ 

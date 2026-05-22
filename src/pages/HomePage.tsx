@@ -1,259 +1,320 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Sparkles, Terminal, ArrowRight, Zap, Play, Layers, Code2, AlertTriangle, Info, AlertCircle } from 'lucide-react'
+import { Sparkles, Terminal, ArrowRight, Zap, Layers, Code2, Heart, Copy, Check, Star } from 'lucide-react'
 import { useToasts } from '../hooks/useToasts'
+import ToastMascot from '../components/ui/ToastMascot'
 
 export default function HomePage() {
   const { addToast } = useToasts()
+  const [copied, setCopied] = useState(false)
+  const [mascotMood, setMascotMood] = useState<'happy' | 'focused' | 'sleepy' | 'excited'>('happy')
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.3,
-      },
-    },
+  const copyCommand = () => {
+    navigator.clipboard.writeText('npm install toastyyy')
+    setCopied(true)
+    addToast({
+      type: 'success',
+      title: 'Command Copied!',
+      description: 'Run it in your terminal to install Toastyyy.',
+    })
+    setMascotMood('excited')
+    setTimeout(() => {
+      setCopied(false)
+      setMascotMood('happy')
+    }, 2000)
   }
 
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
-    },
+  const firePresetToast = (type: 'success' | 'error' | 'warning' | 'info' | 'default', title: string, desc: string, mood: 'happy' | 'excited' | 'focused' | 'sleepy') => {
+    setMascotMood(mood)
+    addToast({
+      type,
+      title,
+      description: desc,
+      showProgress: true,
+      duration: 4000
+    })
+    setTimeout(() => setMascotMood('happy'), 3000)
   }
 
   return (
-    <div className="flex flex-col">
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
-        {/* Animated Background Orbs */}
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-brand-200/30 orb animate-float" />
-        <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-indigo-200/20 orb animate-float-delayed" />
-        
-        <div className="container-tight relative z-10 text-center">
+    <div className="flex flex-col min-h-screen relative overflow-hidden">
+      <div className="absolute top-[-10%] left-[5%] w-[600px] h-[600px] bg-[#ff8c3b]/5 orb animate-float" />
+      <div className="absolute bottom-[20%] right-[-5%] w-[700px] h-[700px] bg-[#e056fd]/5 orb animate-float-delayed" />
+      
+      <section className="pt-24 pb-16 md:pt-36 md:pb-24 px-6 relative z-10 flex flex-col items-center">
+        <div className="container-tight text-center">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass border-brand-200/50 mb-8"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border-accent/20 mb-8 cursor-pointer select-none"
+            whileHover={{ scale: 1.03 }}
+            onClick={() => firePresetToast('default', 'Hello Friend!', 'I am Toastyyy! Click around to explore my states.', 'excited')}
           >
-            <Sparkles className="w-4 h-4 text-brand-500" />
-            <span className="text-xs font-semibold text-brand-700 tracking-wide uppercase">
-              The Future of Toasts is Here
+            <Sparkles className="w-3.5 h-3.5 text-accent animate-pulse" />
+            <span className="text-[11px] font-extrabold text-accent-2 tracking-widest uppercase">
+              Meet Toastyyy 1.0 • Built for Motion
             </span>
           </motion.div>
+
+          <div className="flex justify-center mb-10">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+              className="relative"
+            >
+              <div className="absolute -inset-4 bg-gradient-to-tr from-accent/20 to-purple-500/10 rounded-full blur-2xl opacity-60 animate-pulse" />
+              <ToastMascot size={150} mood={mascotMood} interactive={true} />
+            </motion.div>
+          </div>
 
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="text-5xl lg:text-7xl font-extrabold tracking-tight text-text mb-8 text-balance leading-[1.1]"
+            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            className="text-5xl md:text-7xl font-extrabold tracking-tight text-text leading-[1.08] mb-8 text-balance"
           >
-            Beautifully <span className="gradient-text">animated</span>, <br />
-            dangerously <span className="italic font-serif">simple</span>.
+            Beautifully <span className="gradient-text-warm font-black">animated</span>,<br />
+            gooey & <span className="italic font-serif font-semibold text-accent-2">delicious</span>.
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="text-xl text-text-2 mb-12 max-w-2xl mx-auto text-balance leading-relaxed"
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="text-lg md:text-xl text-text-2 mb-12 max-w-2xl mx-auto leading-relaxed text-balance"
           >
-            Toastyyy is a premium React notification system designed for performance, 
-            motion, and developer experience.
+            A high-fidelity React notification ecosystem built on buttery spring physics. 
+            Bring your interface to life with organic, gooey, hardware-accelerated micro-feedback.
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+            transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-lg mx-auto mb-20"
           >
-            <button 
-              onClick={() => addToast({
-                type: 'success',
-                title: 'Welcome to Toastyyy!',
-                description: 'You just fired your first premium toast animation.',
-              })}
-              className="btn-primary px-8 py-4 text-base group"
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => firePresetToast('success', 'Yum! Butter Toast', 'Perfectly golden, crispy, and warm.', 'excited')}
+              className="btn-primary w-full sm:w-auto px-8 py-4 justify-center text-sm shadow-accent"
             >
-              Get Started Free
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-            
-            <div className="flex items-center gap-2 px-4 py-3 bg-surface border border-border rounded-xl font-mono text-sm shadow-sm group hover:border-brand-300 transition-colors cursor-pointer relative overflow-hidden">
-              <Terminal className="w-4 h-4 text-text-3" />
-              <span className="text-text-2">npm install toastyyy</span>
-              <div className="absolute inset-0 bg-brand-50 opacity-0 group-hover:opacity-10 transition-opacity" />
-            </div>
-          </motion.div>
+              Fire Warm Toast
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </motion.button>
 
-          {/* Hero Interactive Showcase */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="relative mx-auto max-w-4xl"
-          >
-            <div className="glass rounded-3xl p-2 shadow-2xl overflow-hidden group">
-              <div className="bg-surface rounded-2xl p-8 lg:p-12 border border-border/50 relative">
-                <div className="grid lg:grid-cols-2 gap-12 items-center">
-                  <div className="text-left">
-                    <h3 className="text-2xl font-bold mb-4">Try the experience</h3>
-                    <p className="text-text-2 text-sm mb-8 leading-relaxed">
-                      Click the buttons to preview different motion presets and notification styles. 
-                      Every interaction is GPU-accelerated and butter smooth.
-                    </p>
-                    
-                    <div className="grid grid-cols-2 gap-3">
-                      <button 
-                        onClick={() => addToast({ type: 'success', title: 'Action Successful', description: 'Changes saved to the cloud.' })}
-                        className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border hover:border-brand-200 hover:bg-brand-50 transition-all text-sm font-medium"
-                      >
-                        <Zap className="w-4 h-4 text-brand-500" />
-                        Success
-                      </button>
-                      <button 
-                        onClick={() => addToast({ type: 'error', title: 'Connection Failed', description: 'Please check your internet settings.' })}
-                        className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border hover:border-red-200 hover:bg-red-50 transition-all text-sm font-medium"
-                      >
-                        <AlertCircle className="w-4 h-4 text-error" />
-                        Error
-                      </button>
-                      <button 
-                        onClick={() => addToast({ type: 'info', title: 'System Update', description: 'New features are available now.' })}
-                        className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border hover:border-indigo-200 hover:bg-indigo-50 transition-all text-sm font-medium"
-                      >
-                        <Info className="w-4 h-4 text-info" />
-                        Info
-                      </button>
-                      <button 
-                        onClick={() => addToast({ type: 'warning', title: 'Low Storage', description: 'You have used 90% of your quota.' })}
-                        className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border hover:border-warning/30 hover:bg-warning/10 transition-all text-sm font-medium"
-                      >
-                        <AlertTriangle className="w-4 h-4 text-warning" />
-                        Warning
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="relative">
-                    {/* Visual representation of a "Playground" */}
-                    <div className="aspect-square bg-surface-2 rounded-2xl border border-dashed border-border flex items-center justify-center relative group-hover:border-brand-400 transition-colors">
-                      <div className="text-center p-6">
-                        <div className="w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center mx-auto mb-4 animate-float-slow">
-                          <Play className="w-8 h-8 text-brand-500 fill-brand-500" />
-                        </div>
-                        <p className="text-xs font-mono text-text-3">Interactive Canvas</p>
-                      </div>
-                      
-                      {/* Decorative elements */}
-                      <div className="absolute top-4 left-4 w-3 h-3 rounded-full bg-red-400" />
-                      <div className="absolute top-4 left-9 w-3 h-3 rounded-full bg-yellow-400" />
-                      <div className="absolute top-4 left-14 w-3 h-3 rounded-full bg-green-400" />
-                    </div>
-                  </div>
-                </div>
+            <div 
+              onClick={copyCommand}
+              className="flex items-center justify-between w-full sm:w-auto gap-4 px-5 py-4 bg-white border border-border rounded-2xl font-mono text-xs shadow-sm hover:border-accent hover:shadow-md transition-all duration-300 cursor-pointer group relative overflow-hidden select-none"
+            >
+              <div className="flex items-center gap-2.5">
+                <Terminal className="w-4 h-4 text-accent" />
+                <span className="text-text-2">npm i toastyyy</span>
+              </div>
+              <div className="p-1 rounded-lg bg-surface-2 group-hover:bg-accent/10 transition-colors">
+                {copied ? (
+                  <Check className="w-3.5 h-3.5 text-accent" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5 text-text-3 group-hover:text-accent" />
+                )}
               </div>
             </div>
-            
-            {/* Background decorative glow */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-brand-500/20 via-indigo-500/20 to-purple-500/20 rounded-[32px] blur-2xl z-[-1] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
           </motion.div>
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="section bg-white/50 backdrop-blur-sm">
+      <section className="py-20 px-6 bg-white/40 backdrop-blur-md border-y border-border-strong relative z-10">
         <div className="container-tight">
-          <div className="text-center mb-20">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4 tracking-tight">Built for elite developers</h2>
-            <p className="text-text-2 max-w-xl mx-auto">
-              We've obsessed over every frame and pixel so you don't have to.
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-text mb-4">
+              Tactile Playground Canvas
+            </h2>
+            <p className="text-text-2 text-sm md:text-base max-w-xl mx-auto leading-relaxed">
+              Every interaction triggers real-time spring transformations. Hover over and click these gourmet flavors to sample Toastyyy's fluid curves.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 items-stretch">
+            <div className="glass rounded-[32px] p-8 flex flex-col justify-between border-accent/10 hover:border-accent/30 transition-all duration-500 shadow-xl group">
+              <div>
+                <h3 className="text-xl font-extrabold text-text mb-3">Chef's Specials</h3>
+                <p className="text-text-2 text-xs md:text-sm mb-8 leading-relaxed">
+                  We've prepared specific preset profiles with tailored spring tension, gooey filters, and custom layouts to suit any user event.
+                </p>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <button 
+                    onClick={() => firePresetToast('success', 'Strawberry Jam Toast', 'Sweet, vibrant, and bursting with berry energy.', 'excited')}
+                    className="flex flex-col items-start p-4 rounded-2xl border border-border hover:border-accent/40 bg-white hover:bg-accent/5 transition-all text-left group/btn"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-3 group-hover/btn:scale-105 transition-transform">
+                      <Zap className="w-4 h-4 text-emerald-500" />
+                    </div>
+                    <span className="text-[13px] font-bold text-text">Strawberry Jam</span>
+                    <span className="text-[11px] text-text-3 mt-1 leading-normal">Gooey & Sweet</span>
+                  </button>
+
+                  <button 
+                    onClick={() => firePresetToast('error', 'Burnt Garlic Slice', 'Warning: High flavor heat detected!', 'sleepy')}
+                    className="flex flex-col items-start p-4 rounded-2xl border border-border hover:border-red-500/40 bg-white hover:bg-red-50/5 transition-all text-left group/btn"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center mb-3 group-hover/btn:scale-105 transition-transform">
+                      <Star className="w-4 h-4 text-red-500" />
+                    </div>
+                    <span className="text-[13px] font-bold text-text">Burnt Garlic</span>
+                    <span className="text-[11px] text-text-3 mt-1 leading-normal">Spicy Warning</span>
+                  </button>
+
+                  <button 
+                    onClick={() => firePresetToast('info', 'Whipped Cream Spread', 'Light, clean, and perfectly balanced cream.', 'happy')}
+                    className="flex flex-col items-start p-4 rounded-2xl border border-border hover:border-indigo-500/40 bg-white hover:bg-indigo-50/5 transition-all text-left group/btn"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center mb-3 group-hover/btn:scale-105 transition-transform">
+                      <Sparkles className="w-4 h-4 text-indigo-500" />
+                    </div>
+                    <span className="text-[13px] font-bold text-text">Whipped Cream</span>
+                    <span className="text-[11px] text-text-3 mt-1 leading-normal">Info Splash</span>
+                  </button>
+
+                  <button 
+                    onClick={() => firePresetToast('warning', 'Cheddar Melt Drop', 'Careful, this slice is incredibly hot.', 'focused')}
+                    className="flex flex-col items-start p-4 rounded-2xl border border-border hover:border-amber-500/40 bg-white hover:bg-amber-50/5 transition-all text-left group/btn"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center mb-3 group-hover/btn:scale-105 transition-transform">
+                      <Layers className="w-4 h-4 text-amber-500" />
+                    </div>
+                    <span className="text-[13px] font-bold text-text">Cheddar Melt</span>
+                    <span className="text-[11px] text-text-3 mt-1 leading-normal">Slow Melt alert</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-[#ffd899]/30 to-[#ffeebb]/20 border border-accent/10 rounded-[32px] p-8 flex flex-col items-center justify-center relative overflow-hidden group shadow-xl">
+              <div className="absolute top-4 left-4 flex gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-black/10" />
+                <div className="w-2.5 h-2.5 rounded-full bg-black/10" />
+                <div className="w-2.5 h-2.5 rounded-full bg-black/10" />
+              </div>
+
+              <motion.div 
+                whileHover={{ scale: 1.05, rotate: 1 }}
+                className="w-40 h-40 bg-white rounded-3xl shadow-xl border border-border-strong flex flex-col items-center justify-center text-center p-6 cursor-pointer relative"
+              >
+                <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-accent animate-ping" />
+                <ToastMascot size={90} mood={mascotMood} interactive={false} />
+                <p className="text-[10px] font-extrabold font-mono text-accent mt-3 uppercase tracking-wider">Canvas Live</p>
+              </motion.div>
+
+              <div className="mt-8 text-center max-w-xs">
+                <h4 className="text-sm font-extrabold text-text mb-1">Organic Gaze Mechanics</h4>
+                <p className="text-text-2 text-xs leading-relaxed">
+                  Observe the Mascot's focus. Hover over the canvas to see its eyes follow your exact pointer vectors in high precision.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-24 px-6 relative z-10">
+        <div className="container-tight">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-text mb-4">
+              Premium Craftsmanship
+            </h2>
+            <p className="text-text-2 max-w-xl mx-auto leading-relaxed">
+              Every detail is engineered with absolute performance in mind. Say goodbye to blocky notifications.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { 
-                icon: <Zap className="w-6 h-6" />, 
-                title: 'High Performance', 
-                desc: '60fps animations using GPU-accelerated transforms for zero layout shift.' 
-              },
-              { 
-                icon: <Layers className="w-6 h-6" />, 
-                title: 'Flexible API', 
-                desc: 'Fully customizable types, positions, and durations with a tiny footprint.' 
-              },
-              { 
-                icon: <Code2 className="w-6 h-6" />, 
-                title: 'Type Safe', 
-                desc: 'First-class TypeScript support with full intellisense for all your options.' 
-              },
-            ].map((feature, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ y: -5 }}
-                className="p-8 rounded-2xl border border-border bg-surface hover:shadow-xl transition-all duration-300"
-              >
-                <div className="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center text-brand-600 mb-6">
-                  {feature.icon}
+            <motion.div
+              whileHover={{ y: -6 }}
+              className="p-8 rounded-[28px] border border-border bg-white shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent mb-6">
+                  <Zap className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-bold mb-3">{feature.title}</h3>
-                <p className="text-text-2 text-sm leading-relaxed">{feature.desc}</p>
-              </motion.div>
-            ))}
+                <h3 className="text-lg font-bold text-text mb-3">60fps Transitions</h3>
+                <p className="text-text-2 text-xs md:text-sm leading-relaxed">
+                  Leverages CSS GPU transforms and Framer Motion spring physics to maintain absolute layout stability.
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -6 }}
+              className="p-8 rounded-[28px] border border-border bg-white shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent mb-6">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-bold text-text mb-3">Elastic Stacking</h3>
+                <p className="text-text-2 text-xs md:text-sm leading-relaxed">
+                  Smart notification stack spacing prevents overlapping layouts. Slices stack smoothly with elastic collision.
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -6 }}
+              className="p-8 rounded-[28px] border border-border bg-white shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent mb-6">
+                  <Code2 className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-bold text-text mb-3">Zero Configuration</h3>
+                <p className="text-text-2 text-xs md:text-sm leading-relaxed">
+                  Plug-and-play architecture integrates right out of the box with zero boilerplate styling.
+                </p>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
-      
-      {/* Installation Snippet */}
-      <section className="section container-tight">
-        <div className="glass rounded-[32px] p-8 lg:p-12 relative overflow-hidden">
-          <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-bold mb-6 tracking-tight">Start building in seconds</h2>
-              <p className="text-text-2 mb-8 leading-relaxed">
-                Integration is as simple as adding a provider. Zero configuration required to get started with our premium presets.
-              </p>
-              <div className="flex gap-4">
-                <button className="btn-primary">Read Documentation</button>
-                <button className="btn-ghost">View Source</button>
-              </div>
+
+      <section className="py-20 px-6 bg-gradient-to-t from-accent/5 to-transparent border-t border-border-strong relative z-10">
+        <div className="container-tight text-center">
+          <div className="max-w-xl mx-auto">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-border rounded-full shadow-sm mb-6 text-xs text-text-2 select-none">
+              <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 animate-pulse" />
+              <span>Built by developers, for developers</span>
             </div>
-            
-            <div className="bg-slate-900 rounded-2xl p-6 font-mono text-[13px] text-slate-300 shadow-2xl relative">
-              <div className="flex gap-1.5 mb-6">
-                <div className="w-3 h-3 rounded-full bg-slate-700" />
-                <div className="w-3 h-3 rounded-full bg-slate-700" />
-                <div className="w-3 h-3 rounded-full bg-slate-700" />
-              </div>
-              <pre className="overflow-x-auto">
-                <code>
-                  <span className="text-brand-400">import</span> {'{ ToastProvider, toast }'} <span className="text-brand-400">from</span> <span className="text-emerald-400">'toastyyy'</span><br /><br />
-                  <span className="text-slate-500">// Wrap your app</span><br />
-                  <span className="text-brand-400">function</span> <span className="text-amber-400">App</span>() {'{'}<br />
-                  &nbsp;&nbsp;<span className="text-brand-400">return</span> (<br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;&lt;<span className="text-indigo-400">ToastProvider</span>&gt;<br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span className="text-indigo-400">Main</span> /&gt;<br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;&lt;/<span className="text-indigo-400">ToastProvider</span>&gt;<br />
-                  &nbsp;&nbsp;)<br />
-                  {'}'}<br /><br />
-                  <span className="text-slate-500">// Fire away</span><br />
-                  <span className="text-amber-400">toast</span>.<span className="text-blue-400">success</span>(<span className="text-emerald-400">'Premium toast fired!'</span>)
-                </code>
-              </pre>
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-text mb-6">
+              Make your app feel elite
+            </h2>
+            <p className="text-text-2 text-sm md:text-base mb-10 leading-relaxed text-balance">
+              Take the next step in UI excellence. Empower your web applications with Toastyyy's warm, responsive, and delightful notification patterns.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="btn-primary justify-center shadow-accent"
+              >
+                Return to Top
+              </motion.button>
+              <motion.a 
+                href="https://github.com/Woopsyyy/ToastyyyWebsite"
+                target="_blank" 
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="btn-ghost justify-center"
+              >
+                GitHub Repository
+              </motion.a>
             </div>
           </div>
-          
-          {/* Decorative background circle */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-brand-500/10 blur-[100px] z-0" />
         </div>
       </section>
     </div>
   )
 }
-
