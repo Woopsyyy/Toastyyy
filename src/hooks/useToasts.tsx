@@ -26,7 +26,7 @@ export interface ToastItem {
   customColor?: string;
   hasBorder?: boolean;
   bounce?: number;
-  theme?: "light" | "dark";
+  theme?: "light" | "dark" | "custom";
   showProgress?: boolean;
   closeOnEscape?: boolean;
   showTimestamp?: boolean;
@@ -53,12 +53,15 @@ interface ToastContextType {
   addToast: (toast: Omit<ToastItem, "id">) => string;
   updateToast: (id: string, toast: Partial<ToastItem>) => void;
   removeToast: (id: string) => void;
+  expanded: boolean;
+  setExpanded: (val: boolean) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [expanded, setExpanded] = useState<boolean>(false);
 
   const addToast = useCallback((toast: Omit<ToastItem, "id">) => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -81,7 +84,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   return (
     <ToastContext.Provider
-      value={{ toasts, addToast, updateToast, removeToast }}
+      value={{
+        toasts,
+        addToast,
+        updateToast,
+        removeToast,
+        expanded,
+        setExpanded,
+      }}
     >
       {children}
     </ToastContext.Provider>

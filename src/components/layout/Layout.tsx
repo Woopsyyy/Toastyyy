@@ -15,9 +15,15 @@ interface ToastStackProps {
     | "bottom-right";
   toasts: any[];
   onClose: (id: string) => void;
+  expanded?: boolean;
 }
 
-function ToastStack({ position, toasts, onClose }: ToastStackProps) {
+function ToastStack({
+  position,
+  toasts,
+  onClose,
+  expanded = false,
+}: ToastStackProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   // Layout directions
@@ -45,7 +51,7 @@ function ToastStack({ position, toasts, onClose }: ToastStackProps) {
         {toasts.map((toast, index) => {
           // Newest toast is at the end of the array. Let's calculate its distance from the end.
           const revIndex = toasts.length - 1 - index;
-          const isStacked = !isHovered && toasts.length > 1;
+          const isStacked = !expanded && !isHovered && toasts.length > 1;
 
           // Stacking visual transforms
           const scale = isStacked ? Math.max(0.82, 1 - revIndex * 0.06) : 1;
@@ -87,7 +93,7 @@ function ToastStack({ position, toasts, onClose }: ToastStackProps) {
 }
 
 export default function Layout() {
-  const { toasts, removeToast } = useToasts();
+  const { toasts, removeToast, expanded } = useToasts();
 
   return (
     <div className="min-h-screen flex flex-col relative selection:bg-brand-100 selection:text-brand-900">
@@ -118,6 +124,7 @@ export default function Layout() {
             position={pos}
             toasts={positionToasts}
             onClose={removeToast}
+            expanded={expanded}
           />
         );
       })}

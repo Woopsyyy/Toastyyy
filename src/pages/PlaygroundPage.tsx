@@ -40,7 +40,7 @@ type ToastPosition =
   | "bottom-right";
 
 export default function PlaygroundPage() {
-  const { addToast } = useToasts();
+  const { addToast, expanded, setExpanded } = useToasts();
   const location = useLocation();
 
   const [showCode, setShowCode] = useState(true);
@@ -55,7 +55,7 @@ export default function PlaygroundPage() {
     customColor: "#ff8c3b",
     hasBorder: true,
     bounce: 0.4,
-    theme: "light" as "light" | "dark",
+    theme: "light" as "light" | "dark" | "custom",
     showProgress: true,
     closeOnEscape: false,
     showTimestamp: false,
@@ -233,19 +233,11 @@ toast.${config.type}('${config.title}', {
         </div>
       </div>
 
-      {/* Side by Side 2-Column Cockpit Layout */}
-      <div className="grid lg:grid-cols-12 gap-8 items-start">
+      {/* 3-Column Premium Cockpit Layout */}
+      <div className="grid lg:grid-cols-12 gap-10 xl:gap-16 items-start">
         {/* Left Side: Parameters Form */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="lg:col-span-5 space-y-6">
           <div className="bg-white border border-border-strong rounded-[28px] shadow-xl p-6 space-y-6">
-            <div className="flex justify-center py-4 bg-surface-2 rounded-2xl border border-border-strong/50 select-none">
-              <ToastMascot
-                size={120}
-                mood={getMascotMood()}
-                interactive={true}
-              />
-            </div>
-
             {/* Content Parameters */}
             <div className="space-y-4">
               <div className="flex items-center gap-1.5 select-none">
@@ -436,13 +428,17 @@ toast.${config.type}('${config.title}', {
                   Theme Mode
                 </span>
                 <div className="flex bg-surface-2 p-0.5 rounded-lg border border-border-strong select-none">
-                  {(["light", "dark"] as const).map((t) => (
+                  {(["light", "dark", "custom"] as const).map((t) => (
                     <button
                       key={t}
                       onClick={() =>
                         setConfig((prev) => ({ ...prev, theme: t }))
                       }
-                      className={`px-3 py-1 rounded-md text-[10px] font-black capitalize transition-all ${config.theme === t ? "bg-white text-accent shadow-sm" : "text-text-3"}`}
+                      className={`px-3 py-1 rounded-md text-[10px] font-black capitalize transition-all ${
+                        config.theme === t
+                          ? "bg-white text-accent shadow-sm"
+                          : "text-text-3"
+                      }`}
                     >
                       {t}
                     </button>
@@ -741,7 +737,7 @@ toast.${config.type}('${config.title}', {
 
               <div className="flex items-center justify-between pt-3 border-t border-border-strong/40">
                 <span className="text-xs font-bold text-text-2">
-                  Gooey Expanded Style
+                  Toastyyy Expanded Style
                 </span>
                 <button
                   onClick={() =>
@@ -758,8 +754,33 @@ toast.${config.type}('${config.title}', {
                   />
                 </button>
               </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-border-strong/40">
+                <span className="text-xs font-bold text-text-2">
+                  Expanded Stack (Don't Collapse)
+                </span>
+                <button
+                  onClick={() => setExpanded(!expanded)}
+                  className={`w-9 h-5 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${expanded ? "bg-accent" : "bg-gray-200"}`}
+                >
+                  <div
+                    className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${expanded ? "translate-x-4" : "translate-x-0"}`}
+                  />
+                </button>
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Middle Column: Dynamic Mascot Bridge */}
+        <div className="lg:col-span-2 flex flex-col items-center justify-center py-8 lg:py-16 select-none lg:sticky lg:top-36 bg-gradient-to-b from-[#ffd899]/5 to-[#ffeebb]/5 border border-border-strong p-6 rounded-[28px] shadow-sm gap-4">
+          <div className="relative">
+            <div className="absolute -inset-2 bg-gradient-to-tr from-accent/20 to-purple-500/10 rounded-full blur-xl opacity-30 animate-pulse" />
+            <ToastMascot size={110} mood={getMascotMood()} interactive={true} />
+          </div>
+          <span className="text-[9px] font-extrabold font-mono text-accent uppercase tracking-widest text-center animate-pulse">
+            Mascot Live
+          </span>
         </div>
 
         {/* Right Side: Monaco Exporter + Fire Trigger */}

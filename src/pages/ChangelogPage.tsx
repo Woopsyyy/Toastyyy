@@ -17,6 +17,42 @@ import { useToasts } from "../hooks/useToasts";
 
 const changelogReleases = [
   {
+    version: "1.3.0",
+    date: "May 24, 2026",
+    type: "Feature Release",
+    title: "The Appearance Engine Update",
+    description:
+      "Introducing a three-tier theme system (Light, Dark, Custom), semantic type-driven color on toast titles and icons, a loading description delay for real-world feedback fidelity, and a definitive fix for the expanded-style double-fire event bug.",
+    features: [
+      {
+        icon: <Sparkles className="w-4 h-4 text-accent" />,
+        label:
+          "Three-tier Theme Mode: Light (white card, dark text, semantic title), Dark (charcoal card, semantic title), Custom (brand color card with auto-contrast text)",
+      },
+      {
+        icon: <Zap className="w-4 h-4 text-accent" />,
+        label:
+          "Semantic type-driven title and icon colors — Success green, Error red, Warning amber, Info blue — consistent across all themes",
+      },
+      {
+        icon: <Zap className="w-4 h-4 text-accent" />,
+        label:
+          "Loading toast description reveal delay: compact spinner shown first, description fades in after 1.5 s",
+      },
+      {
+        icon: <ShieldCheck className="w-4 h-4 text-accent" />,
+        label:
+          "Playground Toastyyy Expanded Style: eliminated duplicate-fire on first click via unified single-mount event model",
+      },
+    ],
+    fixes: [
+      "Fixed standard toast text color regression where success/error/warning backgrounds incorrectly inherited dark foreground",
+      "Resolved progress bar track invisible on white-background toasts",
+      "Fixed loading type toast ignoring description when showDescription was enabled",
+      "Corrected expanded toast close button visibility and closeBtnColor class on all theme variants",
+    ],
+  },
+  {
     version: "1.2.0",
     date: "May 23, 2026",
     type: "Feature Release",

@@ -40,11 +40,12 @@ graph TD
 
 ## 💻 Available NPM Workflow Commands
 
-Maintain a safe workspace using these two primary `pnpm` (or `npm`/`yarn`) scripts:
+Maintain a safe workspace using these primary scripts:
 
 | Command | Action | Safety Policies Enforced |
 | :--- | :--- | :--- |
 | **`pnpm run dev`** | Safely checks out the `dev` branch and boots up the local Vite development server. | **Blocks checkout** and halts if there are uncommitted changes on a different branch to prevent merge conflicts. |
+| **`pnpm run test:dev`** | Runs the **first layer of quality check** locally: formatting checks, ESLint quality audits, TypeScript compile verifications, and Vitest test suites. | **Enforces** that your local workspace perfectly compiles and passes all checks before push. |
 | **`pnpm run push:dev`** | Stages all changes, **prompts you in the terminal for a custom commit message**, commits the staged work, and pushes to remote `dev`. | **Enforces** that your local branch is `dev` and that the commit message is not empty. |
 
 ---
@@ -95,8 +96,8 @@ Every push to your remote branches triggers automated quality verifications and 
 - Sends Discord alerts on PR opening, reviewer comments, and approval states.
 
 ### 3. Push/Merge to `prod` (`prod-deployment.yml`)
-- Triggers high-fidelity Vercel production deployment.
-- Dispatches custom rich Discord cards showing live deployment URLs, authors, and duration.
+- **Speed Optimized Auto-Deployment:** Since all formatting, lint, compile, and security validation checks have already been validated locally (First Layer) and on the `dev` branch pipeline (Second Layer), the production release pipeline completely skips duplicate verifications and executes immediate deployment to Vercel for maximum performance.
+- Dispatches custom rich Discord cards showing live production URLs, authors, and duration.
 
 ---
 
@@ -155,4 +156,14 @@ git merge origin/dev
 pnpm run lint
 pnpm run test
 pnpm run build
-```
+
+---
+
+> [!TIP]
+> **Convenient Shell Shortcuts:**
+> Strict NPM requires you to write the `run` keyword for custom scripts (e.g. `npm run test:dev`). 
+> To bypass this and run shortcuts directly, simply source our custom environment script in your terminal session:
+> ```bash
+> source scripts/env-setup.sh
+> # You can now run 'npm test:dev' and 'npm push dev' directly!
+> ```

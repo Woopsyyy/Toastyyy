@@ -13,6 +13,10 @@ export default {
       colors: {
         accent: '#ff8c3b',
         'accent-2': '#e06c1f',
+        success: '#0bc47b',
+        warning: '#f59e0b',
+        error: '#ef4444',
+        info: '#3b82f6',
         brand: {
           50: '#f0f9ff',
           100: '#e0f2fe',

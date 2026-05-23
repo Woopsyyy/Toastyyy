@@ -142,6 +142,11 @@ To ensure maximum safety and ease of use, Toastyyy features a built-in cross-pla
   - Starts the local Vite development server.
   - *Safety:* Blocks checkout and alerts you if you have uncommitted changes on a different branch to prevent merge conflicts.
 
+- **`pnpm run test:dev`** (or `npm run test:dev`)
+  - Runs the **first layer of quality checks** locally before pushing code.
+  - Concurrently runs Prettier check, ESLint code analysis, TypeScript compilation verification, and the entire Vitest test suite.
+  - *Safety:* Acts as your local pre-push gate to ensure 100% successful builds.
+
 - **`pnpm run push:dev`** (or `npm run push:dev`)
   - Ensures you are on the `dev` branch.
   - Stages all your local changes automatically.
@@ -151,3 +156,11 @@ To ensure maximum safety and ease of use, Toastyyy features a built-in cross-pla
 
 For complete workflow rules, safety hook internals, team guidelines, and recommended GitHub branch protection policies, check out our **[🛠️ Git Workflow & Safety Guide](file:///home/woopsy/project/Random/Toasty/GIT_WORKFLOW.md)**.
 
+> [!TIP]
+> **Convenient Shell Shortcuts:**
+> Strict NPM requires you to write the `run` keyword for custom scripts (e.g. `npm run test:dev`). 
+> To bypass this and run shortcuts directly, simply source our custom environment script in your terminal session:
+> ```bash
+> source scripts/env-setup.sh
+> # You can now run 'npm test:dev' and 'npm push dev' directly!
+> ```

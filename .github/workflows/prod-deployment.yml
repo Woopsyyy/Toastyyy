@@ -15,8 +15,8 @@ env:
   DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
 jobs:
-  validate-prod:
-    name: Production Pre-Flight Sanity Checks
+  deploy-prod:
+    name: Deploy to Production
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -29,7 +29,7 @@ jobs:
             -d '{
               "embeds": [{
                 "title": "🚢 Production Deploy Pipeline Started",
-                "description": "Running safety checks prior to production release on **prod** branch.",
+                "description": "Production release started on **prod** branch.",
                 "color": 3447003,
                 "fields": [
                   {"name": "Repository", "value": "`${{ github.repository }}`", "inline": true},
@@ -41,51 +41,6 @@ jobs:
               }]
             }' \
             "$DISCORD_WEBHOOK"
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 10
-
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'pnpm'
-
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run Prettier Validation
-        run: pnpm exec prettier --check "src/**/*.{ts,tsx,css}"
-
-      - name: Run ESLint
-        run: pnpm run lint
-
-      - name: Run TypeScript Compile
-        run: pnpm exec tsc --noEmit
-
-      - name: Run Unit Tests
-        run: |
-          if pnpm run | grep -q "test"; then
-            pnpm run test
-          else
-            echo "Skipping test execution."
-          fi
-
-      - name: Run Security Audits
-        run: pnpm audit --audit-level=high
-
-      - name: Validate Build
-        run: pnpm run build
-
-  deploy-prod:
-    name: Deploy to Production
-    needs: validate-prod
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
 
       - name: Record Build Start Timestamp
         id: start_time
