@@ -77,16 +77,16 @@ toast.${config.type}('${config.title}', {
   }
 
   return (
-    <div className="flex-1 relative min-h-[calc(100vh-80px)] overflow-hidden bg-bg flex flex-col lg:flex-row">
+    <div className="flex-1 relative min-h-[calc(100vh-80px)] lg:h-[calc(100vh-80px)] lg:overflow-hidden bg-bg flex flex-col lg:flex-row p-0 m-0">
       <div className="absolute inset-0 pointer-events-none opacity-[0.015] grid-pattern" />
       <div className="absolute inset-0 z-0 mesh-bg opacity-40" />
 
-      <div className="w-full lg:w-[380px] z-10 p-6 flex-shrink-0">
+      <div className="w-full lg:w-[380px] z-10 p-4 lg:p-6 flex-shrink-0 h-auto lg:h-full">
         <motion.aside 
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="h-full glass rounded-[32px] border border-accent/10 p-6 flex flex-col gap-6 shadow-xl"
+          className="h-auto lg:h-full glass rounded-[24px] lg:rounded-[32px] border border-accent/10 p-5 lg:p-6 flex flex-col gap-5 lg:gap-6 shadow-xl"
         >
           <div className="flex items-center gap-3 border-b border-border-strong pb-4">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-accent to-accent-2 flex items-center justify-center text-white shadow-md">
@@ -219,7 +219,7 @@ toast.${config.type}('${config.title}', {
         </motion.aside>
       </div>
 
-      <div className="flex-1 p-6 relative flex flex-col justify-between">
+      <div className="flex-1 p-4 lg:p-6 relative flex flex-col justify-between h-auto lg:h-full">
         <div className="flex-1 flex flex-col items-center justify-center relative z-10 py-12">
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
