@@ -1,102 +1,126 @@
-# 🚀 Toastyyy CI/CD & Vercel Deployment Guide
+# 🍞 Toastyyy — The Interactive React Notification Ecosystem
 
-Welcome to the automated CI/CD deployment guide for **Toastyyy**! This project is pre-configured with a robust **GitHub Actions** pipeline that automatically verifies, builds, and deploys your website to **Vercel** on every push.
-
----
-
-## 🛠️ How the CI/CD Pipeline Works
-
-We have set up a workflow file in `.github/workflows/deploy.yml` that monitors your repository activity:
-
-*   **Pushes to `main` or `master`**: Automatically triggers a **Production Deployment** to your live domain.
-*   **Pushes to other branches or Pull Requests**: Automatically triggers a **Preview Deployment** (generates a unique, temporary URL) so you can safely review and test changes before merging.
-
-### 🛡️ Quality Gate (Continuous Integration)
-Before Vercel deployment begins, the workflow enforces a quality gate to prevent broken builds:
-1.  **Dependency Caching**: Utilizes `pnpm` caching to make builds lightning-fast.
-2.  **Lint Check**: Runs `pnpm run lint` to enforce clean coding standards.
-3.  **Compilation & Build Check**: Runs `pnpm run build` (`tsc && vite build`) to verify that the project compiles cleanly without TypeScript or bundler errors.
+Toastyyy is a performance-first, highly customizable React notification system built on buttery-smooth spring physics. Designed for creative laboratory aesthetics, it features an interactive vector Mascot that dynamically blinks, reacts to hover scales, and tracks cursor gaze coordinates in real-time.
 
 ---
 
-## 🔑 Step-by-Step Configuration Guide
+## 🌟 Key Features
 
-To enable automated deployments, you need to connect your GitHub repository to your Vercel account by setting up **three Repository Secrets** in GitHub.
-
-### Step 1: Create a Vercel Access Token
-This token authorizes GitHub Actions to access your Vercel account.
-1.  Go to your [Vercel Account Tokens Settings](https://vercel.com/account/tokens).
-2.  Click **Create** to generate a new token.
-3.  Give it a descriptive name (e.g., `GitHub Actions - Toastyyy`).
-4.  Set the Scope to your account or team.
-5.  Click **Create** and **copy the token immediately** (it will only be shown once).
-
-### Step 2: Retrieve Vercel Org ID and Project ID
-You need to identify your organization (or user account) and project on Vercel.
-
-#### Option A: Using the Vercel CLI (easiest & recommended)
-1.  Open your terminal and install the Vercel CLI globally:
-    ```bash
-    npm install --global vercel@latest
-    ```
-2.  Log in to your account:
-    ```bash
-    vercel login
-    ```
-3.  Link your local repository to a Vercel project (run this in the root of the `Toasty` folder):
-    ```bash
-    vercel link
-    ```
-    *Follow the prompts to select your personal account or team, and create a new project named `toastyyy`.*
-4.  This creates a local file `.vercel/project.json` containing the IDs. Open this file to copy:
-    *   `orgId` (your Vercel Org ID)
-    *   `projectId` (your Vercel Project ID)
-
-#### Option B: From the Vercel Dashboard Web UI
-*   **VERCEL_ORG_ID (Org / Team ID)**:
-    *   If you are using a **personal account**, navigate to your Account Settings. Your Org ID is your Account ID.
-    *   If you are using a **Team account**, go to your Team Settings -> General, and look for the **Team ID** (starts with `team_`).
-*   **VERCEL_PROJECT_ID**:
-    *   Go to your Project Dashboard on Vercel.
-    *   Click on **Settings** in the top navigation menu -> **General**.
-    *   Scroll down to the **Project ID** section and copy the ID.
+*   **Interactive Toast Mascot:** A handcrafted, reactive vector toast character that tracks cursor gazes, blinks asynchronously, and wiggles/squashes on interactions.
+*   **Dynamic Viewport Position Slots:** Render notifications cleanly across five designated layout channels (`top-left`, `top-right`, `bottom-left`, `bottom-center`, `bottom-right`).
+*   **Real-Time Spring Bounce Coefficients:** Adjust animation stiffness and custom spring curves using elastic bounce controllers.
+*   **Dual Theme Presets:** Refined light and dark modes matching sleek modern aesthetics.
+*   **Behavioral Controls:** Timed progress indicators, Escape key closures, dynamic timestamps, and customizable action triggers.
+*   **Gourmet Types:** Predefined styles for `default`, `success`, `error`, `warning`, `info`, `loading` spinners, and pulsing `promise` states.
 
 ---
 
-### Step 3: Add Secrets to GitHub
-Add the credentials securely as environment secrets in your GitHub repository:
-1.  Go to your project repository on **GitHub**.
-2.  Click on **Settings** along the top menu bar.
-3.  In the left-hand sidebar, expand **Secrets and variables** and click **Actions**.
-4.  Click the **New repository secret** button.
-5.  Add the following three secrets:
+## 🚀 Installation
 
-| Secret Name | Value | Description |
-| :--- | :--- | :--- |
-| `VERCEL_TOKEN` | *`<Your Vercel Access Token>`* | The personal access token created in Step 1. |
-| `VERCEL_ORG_ID` | *`<Your Vercel orgId>`* | The Vercel Organization or Account ID. |
-| `VERCEL_PROJECT_ID` | *`<Your Vercel projectId>`* | The Vercel Project ID. |
+Add the library to your React project:
 
-> [!NOTE]
-> The workflow includes a graceful check. If these secrets are not configured yet, the build validation (Lint & TypeScript compilation) will still run on every commit, but the deployment steps will be skipped with a warning.
+```bash
+npm install toastyyy
+```
+
+Make sure you have `framer-motion` (v11.x or later) and `lucide-react` installed as peer dependencies.
 
 ---
 
-## ⚡ Alternative: Vercel Native GitHub Integration
+## 💻 Quick Start
 
-If you want a zero-maintenance setup without managing GitHub Actions or access tokens, Vercel provides a seamless native integration.
+### 1. Wrap Your Root Component
+Initialize the global toast queue by wrapping your tree context with the `ToastProvider`:
 
-### How to set it up:
-1.  Go to your [Vercel Dashboard](https://vercel.com).
-2.  Click **Add New** -> **Project**.
-3.  Click **Import** next to your Toastyyy GitHub repository.
-4.  Vercel will auto-detect the Vite framework. Keep the default settings and click **Deploy**.
+```tsx
+import { ToastProvider } from 'toastyyy'
 
-### ⚖️ Actions Pipeline vs. Native Integration
+export default function App() {
+  return (
+    <ToastProvider>
+      <MainDashboard />
+    </ToastProvider>
+  )
+}
+```
 
-| Feature | GitHub Actions Workflow (This Setup) | Vercel Native Integration |
-| :--- | :--- | :--- |
-| **Lint checks** | 🟢 **Yes** (Blocks deployment if code is messy) | 🔴 No (Deploys even if ESLint fails) |
-| **Strict Typecheck** | 🟢 **Yes** (Blocks deployment if TypeScript fails) | 🔴 No (Only checks production bundle) |
-| **Custom Steps** | 🟢 **Yes** (Can add automated testing, Slack alerts, etc.) | 🔴 No (Only runs standard Vercel pipeline) |
-| **Setup Overhead** | 🟡 Requires copying 3 secrets to GitHub | 🟢 One-click authorization |
+### 2. Trigger Customized Alerts
+Use the `useToasts` hook to fire or programmatically update toasts:
+
+```tsx
+import { useToasts } from 'toastyyy'
+
+export default function MainDashboard() {
+  const { addToast } = useToasts()
+
+  const fireSuccess = () => {
+    addToast({
+      type: 'success',
+      title: 'Golden Toast Fired',
+      description: 'Baked to absolute crispy perfection.',
+      showDescription: true,
+      position: 'bottom-right',
+      bounce: 0.40,
+      theme: 'light'
+    })
+  }
+
+  return (
+    <button onClick={fireSuccess}>
+      Bake Sourdough
+    </button>
+  )
+}
+```
+
+---
+
+## ⚙️ Configuration Options
+
+Each notification accepts the following parameters:
+
+```typescript
+interface ToastItem {
+  type: 'default' | 'success' | 'error' | 'warning' | 'info' | 'loading' | 'promise'
+  title: string
+  description?: string
+  showDescription?: boolean
+  showAction?: boolean
+  actionText?: string
+  customColor?: string
+  hasBorder?: boolean
+  bounce?: number
+  theme?: 'light' | 'dark'
+  showProgress?: boolean
+  closeOnEscape?: boolean
+  showTimestamp?: boolean
+  showCloseButton?: boolean
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right'
+  duration?: number
+}
+```
+
+---
+
+## 🔄 Programmatic Toast Updates (Promises)
+You can dynamically transition a loader toast into a resolved success or error state by leveraging returned IDs and `updateToast`:
+
+```tsx
+import { useToasts } from 'toastyyy'
+
+const triggerProcess = () => {
+  const id = addToast({
+    type: 'loading',
+    title: 'Uploading packages...',
+    duration: 8000
+  })
+
+  setTimeout(() => {
+    updateToast(id, {
+      type: 'success',
+      title: 'Upload Successful!',
+      bounce: 0.15
+    })
+  }, 2000)
+}
+```

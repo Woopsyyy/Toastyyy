@@ -4,7 +4,6 @@ import { ToastProvider } from './hooks/useToasts'
 import Layout from './components/layout/Layout'
 import HomePage from './pages/HomePage'
 import ExamplesPage from './pages/ExamplesPage'
-import BuilderPage from './pages/BuilderPage'
 import DocsPage from './pages/DocsPage'
 import ChangelogPage from './pages/ChangelogPage'
 
@@ -16,7 +15,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/examples" element={<ExamplesPage />} />
-            <Route path="/builder" element={<BuilderPage />} />
+            <Route path="/builder" element={<ExamplesPage />} />
             <Route path="/docs" element={<DocsPage />} />
             <Route path="/changelog" element={<ChangelogPage />} />
           </Route>

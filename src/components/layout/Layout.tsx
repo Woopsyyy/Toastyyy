@@ -4,7 +4,6 @@ import Footer from './Footer'
 import { useToasts } from '../../hooks/useToasts'
 import Toast from '../ui/Toast'
 import { AnimatePresence } from 'framer-motion'
-import { GooeyToaster } from 'goey-toast'
 
 export default function Layout() {
   const { toasts, removeToast } = useToasts()
@@ -18,8 +17,6 @@ export default function Layout() {
       <main className="flex-1 flex flex-col mt-16 lg:mt-20">
         <Outlet />
       </main>
-
-      <GooeyToaster position="bottom-left" />
 
       {(['top-left', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'] as const).map((pos) => {
         const positionToasts = toasts.filter((t) => (t.position || 'bottom-right') === pos)

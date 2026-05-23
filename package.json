@@ -1,8 +1,11 @@
 {
   "name": "toastyyy",
-  "private": true,
   "version": "1.1.0",
   "type": "module",
+  "files": [
+    "dist-lib",
+    "README.md"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -10,20 +13,19 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
-  "main": "./dist-lib/toastyyy.umd.js",
+  "main": "./dist-lib/toastyyy.umd.cjs",
   "module": "./dist-lib/toastyyy.js",
   "types": "./dist-lib/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist-lib/toastyyy.js",
-      "require": "./dist-lib/toastyyy.umd.js",
+      "require": "./dist-lib/toastyyy.umd.cjs",
       "types": "./dist-lib/index.d.ts"
     }
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
     "framer-motion": "^11.2.10",
-    "goey-toast": "^0.4.0",
     "lucide-react": "^0.378.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -46,6 +48,7 @@
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.4.5",
-    "vite": "^5.2.12"
+    "vite": "^5.2.12",
+    "vite-plugin-dts": "^5.0.1"
   }
 }

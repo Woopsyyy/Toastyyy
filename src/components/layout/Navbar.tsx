@@ -5,7 +5,6 @@ import ToastMascot from '../ui/ToastMascot'
 
 const navItems = [
   { path: '/examples', label: 'Examples' },
-  { path: '/builder', label: 'Builder' },
   { path: '/docs', label: 'Docs' },
   { path: '/changelog', label: 'Changelog' },
 ]
