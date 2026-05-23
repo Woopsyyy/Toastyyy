@@ -11,6 +11,8 @@ export default {
         mono: ['JetBrains Mono', 'Fira Code', 'Cascadia Code', 'monospace'],
       },
       colors: {
+        accent: '#ff8c3b',
+        'accent-2': '#e06c1f',
         brand: {
           50: '#f0f9ff',
           100: '#e0f2fe',
