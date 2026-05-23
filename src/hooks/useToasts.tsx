@@ -20,6 +20,7 @@ export interface ToastItem {
   showCloseButton?: boolean
   position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right'
   duration?: number
+  variant?: 'standard' | 'expanded'
 }
 
 interface ToastContextType {

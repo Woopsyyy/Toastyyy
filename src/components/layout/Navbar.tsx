@@ -14,7 +14,7 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-5 px-4 pointer-events-none">
-      <nav className="glass rounded-3xl px-6 py-3 flex items-center justify-between md:justify-start gap-12 shadow-lg pointer-events-auto max-w-5xl w-full">
+      <nav className="glass rounded-3xl px-6 py-3 flex items-center justify-between md:justify-start gap-12 shadow-lg pointer-events-auto max-w-[1400px] w-full">
         <Link 
           to="/" 
           className="flex items-center gap-3 font-extrabold text-xl tracking-tight text-text hover:opacity-90 transition-opacity"

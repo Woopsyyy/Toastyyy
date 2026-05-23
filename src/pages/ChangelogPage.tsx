@@ -17,6 +17,19 @@ import { useToasts } from '../hooks/useToasts'
 
 const changelogReleases = [
   {
+    version: '1.2.0',
+    date: 'May 23, 2026',
+    type: 'Feature Release',
+    title: 'The Unified Canvas Update',
+    description: 'Consolidating the gourmet lab into a continuous single-page scrolling experience, removing favorites database dependencies, and integrating the visual customizer directly beside the recipes grid.',
+    features: [
+      { icon: <Zap className="w-4 h-4 text-accent" />, label: 'Consolidated Builder and Docs into a high-performance single-page scroll layout' },
+      { icon: <Sparkles className="w-4 h-4 text-accent" />, label: 'Embedded the Visual Customizer directly side-by-side with preset cards grid' },
+      { icon: <ShieldCheck className="w-4 h-4 text-accent" />, label: 'Removed Favorites feature to align with database-free architecture' }
+    ],
+    fixes: ['Corrected responsive layout overlap on viewports under 1024px', 'Fixed anchor jump alignment shifting']
+  },
+  {
     version: '1.1.0',
     date: 'May 22, 2026',
     type: 'Feature Release',

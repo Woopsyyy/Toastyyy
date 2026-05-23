@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { CheckCircle2, AlertCircle, Info, AlertTriangle, X, Loader2, Sparkles } from 'lucide-react'
+import { CheckCircle2, AlertCircle, Info, AlertTriangle, X, Loader2, Sparkles, Bell } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 export type ToastType = 'default' | 'success' | 'error' | 'warning' | 'info' | 'loading' | 'promise'
@@ -22,6 +22,7 @@ interface ToastProps {
   closeOnEscape?: boolean
   showTimestamp?: boolean
   showCloseButton?: boolean
+  variant?: 'standard' | 'expanded'
 }
 
 const icons = {
@@ -51,7 +52,8 @@ export default function Toast({
   showProgress = true,
   closeOnEscape = false,
   showTimestamp = false,
-  showCloseButton = true
+  showCloseButton = true,
+  variant = 'standard'
 }: ToastProps) {
   const [progress, setProgress] = useState(100)
   const [timestamp] = useState(() => {
@@ -87,6 +89,141 @@ export default function Toast({
   }, [id, closeOnEscape, onClose])
 
   const isDark = theme === 'dark'
+
+  // Premium Gooey Expanded Double-Bubble layout
+  if (variant === 'expanded') {
+    let textColor = 'text-warning'
+    let iconElement = <AlertCircle className="w-4 h-4 text-warning" />
+    let progressBg = 'bg-warning'
+    
+    if (type === 'success') {
+      textColor = 'text-success'
+      iconElement = <CheckCircle2 className="w-4 h-4 text-success" />
+      progressBg = 'bg-success'
+    } else if (type === 'error') {
+      textColor = 'text-error'
+      iconElement = <AlertCircle className="w-4 h-4 text-error" />
+      progressBg = 'bg-error'
+    } else if (type === 'info') {
+      textColor = 'text-info'
+      iconElement = <Info className="w-4 h-4 text-info" />
+      progressBg = 'bg-info'
+    } else if (type === 'loading') {
+      textColor = 'text-accent'
+      iconElement = <Loader2 className="w-4 h-4 text-accent animate-spin" />
+      progressBg = 'bg-accent'
+    } else if (type === 'default') {
+      textColor = 'text-accent'
+      iconElement = <Bell className="w-4 h-4 text-accent" />
+      progressBg = 'bg-accent'
+    }
+
+    if (customColor) {
+      textColor = ''
+    }
+
+    return (
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 50, scale: 0.9, filter: 'blur(10px)' }}
+        animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+        exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+        transition={{
+          type: 'spring',
+          bounce: bounce,
+          duration: 0.6
+        }}
+        className="relative flex flex-col items-center pointer-events-auto group min-w-[340px] max-w-[420px]"
+      >
+        {/* SVG Gooey Filter definition */}
+        <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="0" height="0" className="absolute pointer-events-none">
+          <defs>
+            <filter id="gooey-toast">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+              <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8" result="goo" />
+              <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+            </filter>
+          </defs>
+        </svg>
+
+        {/* Gooey Background shapes */}
+        <div className="absolute inset-0 pointer-events-none select-none z-0" style={{ filter: 'url(#gooey-toast)' }}>
+          {/* Top small bubble BG */}
+          <div 
+            className={`absolute top-0 left-1/2 -translate-x-1/2 w-44 h-9 ${isDark ? 'bg-[#12131a] border border-white/5' : 'bg-white border border-black/[0.03]'} rounded-2xl shadow-sm`}
+          />
+          {/* Bottom large bubble BG */}
+          <div 
+            className={`absolute bottom-0 left-0 right-0 top-[26px] ${isDark ? 'bg-[#12131a] border border-white/5' : 'bg-white border border-black/[0.03]'} rounded-[24px] shadow-lg`}
+          />
+        </div>
+
+        {/* Foreground Content */}
+        <div className="relative z-10 w-full flex flex-col items-center select-none">
+          {/* Top Title/Icon Bar */}
+          <div className="h-9 flex items-center justify-center gap-1.5 px-4">
+            {iconElement}
+            <span 
+              className={`text-[11px] font-extrabold tracking-wide uppercase ${textColor}`}
+              style={customColor ? { color: customColor } : undefined}
+            >
+              {title}
+            </span>
+          </div>
+
+          {/* Bottom Content Area */}
+          <div className="w-full pt-1 pb-4 px-5 flex items-center justify-between gap-4 mt-2">
+            <div className="flex-1 min-w-0">
+              <p className={`text-xs font-semibold leading-relaxed ${isDark ? 'text-white/80' : 'text-text-2'}`}>
+                {description || 'System warning active.'}
+              </p>
+              {showAction && actionText && (
+                <div className="mt-2">
+                  <button 
+                    onClick={() => onClose(id)}
+                    className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider bg-accent text-white hover:opacity-90 transition-opacity"
+                    style={customColor ? { backgroundColor: customColor } : undefined}
+                  >
+                    {actionText}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {showTimestamp && (
+              <span className="text-[10px] font-bold text-text-3 font-mono flex-shrink-0">
+                {timestamp}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        {showProgress && (
+          <div className="absolute bottom-0 left-4 right-4 h-1 bg-surface-2 rounded-full overflow-hidden z-20">
+            <motion.div 
+              className={`h-full ${progressBg}`}
+              style={customColor ? { backgroundColor: customColor } : undefined}
+              initial={{ width: '100%' }}
+              animate={{ width: `${progress}%` }}
+              transition={{ ease: 'linear' }}
+            />
+          </div>
+        )}
+
+        {/* Close Button */}
+        {showCloseButton && (
+          <button 
+            onClick={() => onClose(id)}
+            className="absolute top-[32px] right-3.5 p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-surface-2 transition-all duration-200 z-30"
+          >
+            <X className="w-3.5 h-3.5 text-text-3" />
+          </button>
+        )}
+      </motion.div>
+    )
+  }
+
   const containerClasses = `toast group ${isDark ? '!bg-[#12131a] !text-white !border-white/10 shadow-xl shadow-black/30' : ''} ${hasBorder === false ? '!border-transparent' : ''}`
 
   return (

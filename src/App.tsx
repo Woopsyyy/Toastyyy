@@ -3,8 +3,6 @@ import { AnimatePresence } from 'framer-motion'
 import { ToastProvider } from './hooks/useToasts'
 import Layout from './components/layout/Layout'
 import HomePage from './pages/HomePage'
-import ExamplesPage from './pages/ExamplesPage'
-import DocsPage from './pages/DocsPage'
 import ChangelogPage from './pages/ChangelogPage'
 
 export default function App() {
@@ -14,9 +12,9 @@ export default function App() {
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
-            <Route path="/examples" element={<ExamplesPage />} />
-            <Route path="/builder" element={<ExamplesPage />} />
-            <Route path="/docs" element={<DocsPage />} />
+            <Route path="/examples" element={<HomePage />} />
+            <Route path="/builder" element={<HomePage />} />
+            <Route path="/docs" element={<HomePage />} />
             <Route path="/changelog" element={<ChangelogPage />} />
           </Route>
         </Routes>
@@ -24,4 +22,5 @@ export default function App() {
     </ToastProvider>
   )
 }
+
 

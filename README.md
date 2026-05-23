@@ -1,5 +1,9 @@
 # 🍞 Toastyyy — The Interactive React Notification Ecosystem
 
+<p align="center">
+  <img src="./public/banner.png" alt="Toastyyy Banner" width="100%" />
+</p>
+
 Toastyyy is a performance-first, highly customizable React notification system built on buttery-smooth spring physics. Designed for creative laboratory aesthetics, it features an interactive vector Mascot that dynamically blinks, reacts to hover scales, and tracks cursor gaze coordinates in real-time.
 
 ---

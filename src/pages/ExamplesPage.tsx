@@ -39,21 +39,18 @@ type Category = 'All' | 'Basics' | 'Layouts' | 'Advanced' | 'Easing' | 'Promises
 type ToastType = 'default' | 'success' | 'error' | 'warning' | 'info' | 'loading' | 'promise'
 type ToastPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right'
 
-export default function ExamplesPage() {
+export default function PlaygroundSection() {
   const { addToast, updateToast } = useToasts()
-  const location = useLocation()
   
   const [activeCategory, setActiveCategory] = useState<Category>('All')
-  const [likedCards, setLikedCards] = useState<Record<number, boolean>>({})
-  const [activeCardId, setActiveCardId] = useState<number | null>(null)
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [activeCardId, setActiveCardId] = useState<number | null>(1)
   const [showCode, setShowCode] = useState(true)
   const [copied, setCopied] = useState(false)
 
   const [config, setConfig] = useState({
-    title: 'Gourmet Toast Ready',
-    description: 'Crispy edges with a perfect layer of butter.',
-    showDescription: true,
+    title: 'System Dispatch Active',
+    description: 'Standard system operations are running normally.',
+    showDescription: false,
     showAction: false,
     actionText: 'Undo',
     customColor: '#ff8c3b',
@@ -65,35 +62,12 @@ export default function ExamplesPage() {
     showTimestamp: false,
     showCloseButton: true,
     position: 'bottom-right' as ToastPosition,
-    type: 'success' as ToastType
+    type: 'default' as ToastType,
+    variant: 'standard' as 'standard' | 'expanded'
   })
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search)
-    if (params.get('builder') === 'true' || location.pathname === '/builder') {
-      setIsDrawerOpen(true)
-    }
-  }, [location])
-
-  const toggleLike = (id: number, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setLikedCards(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }))
-    
-    if (!likedCards[id]) {
-      addToast({
-        type: 'default',
-        title: 'Added to Favorites!',
-        description: 'Thank you for supporting this recipe template.'
-      })
-    }
-  }
 
   const handleCardClick = (example: any) => {
     setActiveCardId(example.id)
-    setIsDrawerOpen(true)
     setConfig({
       title: example.builderConfig.title,
       description: example.builderConfig.description || '',
@@ -109,7 +83,8 @@ export default function ExamplesPage() {
       showTimestamp: example.builderConfig.showTimestamp ?? false,
       showCloseButton: example.builderConfig.showCloseButton ?? true,
       position: example.builderConfig.position || 'bottom-right',
-      type: example.builderConfig.type || 'default'
+      type: example.builderConfig.type || 'default',
+      variant: example.builderConfig.variant || 'standard'
     })
   }
 
@@ -137,7 +112,8 @@ export default function ExamplesPage() {
       closeOnEscape: config.closeOnEscape,
       showTimestamp: config.showTimestamp,
       showCloseButton: config.showCloseButton,
-      position: config.position
+      position: config.position,
+      variant: config.variant
     })
   }
 
@@ -160,6 +136,7 @@ export default function ExamplesPage() {
 
 toast.${config.type}('${config.title}', {
   description: ${config.showDescription ? `'${config.description}'` : 'undefined'},
+  variant: '${config.variant}',
   position: '${config.position}',
   theme: '${config.theme}',
   showProgress: ${config.showProgress},
@@ -1059,7 +1036,8 @@ toast.${config.type}('${config.title}', {
         showTimestamp: false,
         showCloseButton: true,
         position: 'bottom-right' as const,
-        type: 'default' as const
+        type: 'default' as const,
+        variant: 'standard' as const
       },
       action: () => addToast({
         type: 'default',
@@ -1068,7 +1046,44 @@ toast.${config.type}('${config.title}', {
         showDescription: true,
         showAction: true,
         actionText: 'Execute Callback',
-        customColor: '#ff8c3b'
+        customColor: '#ff8c3b',
+        variant: 'standard'
+      })
+    },
+    {
+      id: 26,
+      title: 'Storage Warning (Expanded)',
+      category: 'Layouts',
+      desc: 'Morphed double-bubble gooey warning toast replicating premium system alerts.',
+      tags: ['Morphic', 'Expanded', 'Warning'],
+      likes: 620,
+      icon: <AlertTriangle className="w-5 h-5 text-amber-500" />,
+      color: 'bg-amber-500/10 border-amber-500/20 text-amber-500',
+      builderConfig: {
+        title: 'Storage warning',
+        description: 'You are using 95% of your available storage.',
+        showDescription: true,
+        showAction: false,
+        actionText: 'Undo',
+        customColor: '#f1a91d',
+        hasBorder: true,
+        bounce: 0.50,
+        theme: 'light' as const,
+        showProgress: true,
+        closeOnEscape: false,
+        showTimestamp: true,
+        showCloseButton: true,
+        position: 'bottom-right' as const,
+        type: 'warning' as const,
+        variant: 'expanded' as const
+      },
+      action: () => addToast({
+        type: 'warning',
+        title: 'Storage warning',
+        description: 'You are using 95% of your available storage.',
+        showDescription: true,
+        showTimestamp: true,
+        variant: 'expanded'
       })
     }
   ]
@@ -1078,7 +1093,7 @@ toast.${config.type}('${config.title}', {
     : examples.filter(item => item.category === activeCategory)
 
   return (
-    <div className="container-tight py-16 px-6 relative z-10">
+    <div className="container-wide py-16 px-6 relative z-10" id="playground">
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
         <div className="max-w-xl">
           <motion.div
@@ -1130,114 +1145,82 @@ toast.${config.type}('${config.title}', {
         </motion.div>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <AnimatePresence mode="popLayout">
-          {filteredExamples.map((example, i) => {
-            const isLiked = !!likedCards[example.id]
-            const isActive = activeCardId === example.id
-            return (
-              <motion.div
-                key={example.id}
-                layout
-                initial={{ opacity: 0, scale: 0.96, y: 15 }}
-                animate={{ 
-                  opacity: 1, 
-                  scale: isActive ? 1.02 : 1, 
-                  y: 0,
-                  borderColor: isActive ? '#ff8c3b' : 'rgba(255,140,59,0.1)'
-                }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                transition={{ duration: 0.4, delay: i * 0.01 }}
-                whileHover={{ y: -3 }}
-                onClick={() => handleCardClick(example)}
-                className={`glass rounded-[24px] border transition-all duration-300 overflow-hidden cursor-pointer flex flex-col justify-between ${isActive ? 'ring-2 ring-accent/20 shadow-[0_0_15px_rgba(255,140,59,0.15)] bg-white' : ''}`}
-              >
-                <div className="p-5 flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[8px] font-extrabold text-accent-2 bg-accent/10 px-2 py-0.5 rounded-full uppercase tracking-wider select-none">
-                      {example.category}
-                    </span>
-                    <button 
-                      onClick={(e) => toggleLike(example.id, e)}
-                      className="w-7 h-7 rounded-full bg-white border border-border-strong flex items-center justify-center hover:scale-110 transition-transform shadow-sm group/heart"
-                    >
-                      <Heart className={`w-3 h-3 transition-all ${isLiked ? 'text-red-500 fill-red-500' : 'text-text-3 group-hover/heart:text-red-400'}`} />
-                    </button>
-                  </div>
+      <div className="grid lg:grid-cols-12 gap-8 items-start mt-10">
+        <div className="lg:col-span-7">
+          <div className="grid sm:grid-cols-2 gap-6">
+            <AnimatePresence mode="popLayout">
+              {filteredExamples.map((example, i) => {
+                const isActive = activeCardId === example.id
+                return (
+                  <motion.div
+                    key={example.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.96, y: 15 }}
+                    animate={{ 
+                      opacity: 1, 
+                      scale: isActive ? 1.02 : 1, 
+                      y: 0,
+                      borderColor: isActive ? '#ff8c3b' : 'rgba(255,140,59,0.1)'
+                    }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    transition={{ duration: 0.4, delay: i * 0.01 }}
+                    whileHover={{ y: -3 }}
+                    onClick={() => handleCardClick(example)}
+                    className={`glass rounded-[24px] border transition-all duration-300 overflow-hidden cursor-pointer flex flex-col justify-between ${isActive ? 'ring-2 ring-accent/20 shadow-[0_0_15px_rgba(255,140,59,0.15)] bg-white' : ''}`}
+                  >
+                    <div className="p-5 flex flex-col gap-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[8px] font-extrabold text-accent-2 bg-accent/10 px-2 py-0.5 rounded-full uppercase tracking-wider select-none">
+                          {example.category}
+                        </span>
+                      </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${example.color} border shadow-inner`}>
-                      {example.icon}
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${example.color} border shadow-inner`}>
+                          {example.icon}
+                        </div>
+                        <div>
+                          <h3 className="text-xs font-extrabold text-text leading-tight">{example.title}</h3>
+                          <p className="text-[9px] font-bold text-text-3 uppercase tracking-wider mt-0.5 select-none">Preset #{example.id}00</p>
+                        </div>
+                      </div>
+
+                      <p className="text-text-2 text-[11px] leading-relaxed">
+                        {example.desc}
+                      </p>
                     </div>
-                    <div>
-                      <h3 className="text-xs font-extrabold text-text leading-tight">{example.title}</h3>
-                      <p className="text-[9px] font-bold text-text-3 uppercase tracking-wider mt-0.5 select-none">Preset #{example.id}00</p>
-                    </div>
-                  </div>
 
-                  <p className="text-text-2 text-[11px] leading-relaxed">
-                    {example.desc}
-                  </p>
-                </div>
+                    <div className="px-5 py-3 border-t border-border-strong flex items-center justify-between bg-white/40">
+                      <div className="flex flex-wrap gap-1">
+                        {example.tags.map(tag => (
+                          <span key={tag} className="px-2 py-0.5 rounded bg-white border border-border-strong text-[8px] font-extrabold text-text-2 tracking-wider uppercase select-none">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
 
-                <div className="px-5 py-3 border-t border-border-strong flex items-center justify-between bg-white/40">
-                  <div className="flex flex-wrap gap-1">
-                    {example.tags.map(tag => (
-                      <span key={tag} className="px-2 py-0.5 rounded bg-white border border-border-strong text-[8px] font-extrabold text-text-2 tracking-wider uppercase select-none">
-                        {tag}
+                      <span className="text-[9px] font-extrabold text-accent-2 flex items-center gap-1 hover:gap-1.5 transition-all select-none">
+                        Configure
+                        <Code className="w-3.5 h-3.5" />
                       </span>
-                    ))}
-                  </div>
-
-                  <span className="text-[9px] font-extrabold text-accent-2 flex items-center gap-1 hover:gap-1.5 transition-all select-none">
-                    Configure
-                    <Code className="w-3.5 h-3.5" />
-                  </span>
-                </div>
-              </motion.div>
-            )
-          })}
-        </AnimatePresence>
-      </div>
-
-      <AnimatePresence>
-        {isDrawerOpen && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => {
-                setIsDrawerOpen(false)
-                setActiveCardId(null)
-              }}
-              className="fixed inset-0 bg-black/10 backdrop-blur-xs z-40"
-            />
-            
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 26, stiffness: 220 }}
-              className="fixed top-0 right-0 h-full w-full sm:w-[460px] z-50 bg-white border-l border-border-strong shadow-2xl flex flex-col justify-between overflow-hidden"
-            >
-              <div className="px-6 py-4 border-b border-border-strong flex items-center justify-between bg-surface-2 select-none">
-                <div className="flex items-center gap-2">
-                  <Settings2 className="w-4 h-4 text-accent" />
-                  <span className="text-sm font-extrabold text-text">Visual Studio Engine</span>
-                </div>
-                <button 
-                  onClick={() => {
-                    setIsDrawerOpen(false)
-                    setActiveCardId(null)
-                  }}
-                  className="p-1.5 rounded-lg hover:bg-border-strong text-text-3 hover:text-text transition-all"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </AnimatePresence>
+          </div>
+        </div>
+        
+        <div className="lg:col-span-5 lg:sticky lg:top-24">
+          <div className="bg-white border border-border-strong rounded-[28px] shadow-xl flex flex-col justify-between overflow-hidden h-[calc(100vh-140px)]">
+            <div className="px-6 py-4 border-b border-border-strong flex items-center justify-between bg-surface-2 select-none">
+              <div className="flex items-center gap-2">
+                <Settings2 className="w-4 h-4 text-accent" />
+                <span className="text-sm font-extrabold text-text">Visual Studio Engine</span>
               </div>
+            </div>
 
-              <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin">
                 <div className="flex justify-center py-4 bg-surface-2 rounded-2xl border border-border-strong/50 select-none">
                   <ToastMascot size={110} mood={getMascotMood()} interactive={true} />
                 </div>
@@ -1263,9 +1246,9 @@ toast.${config.type}('${config.title}', {
                         <label className="text-[11px] font-extrabold text-text-2">Show Description</label>
                         <button 
                           onClick={() => setConfig(prev => ({ ...prev, showDescription: !prev.showDescription }))}
-                          className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${config.showDescription ? 'bg-accent' : 'bg-border-strong'}`}
+                          className={`w-9 h-5 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${config.showDescription ? 'bg-accent' : 'bg-gray-200'}`}
                         >
-                          <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-sm absolute transition-all ${config.showDescription ? 'right-0.75' : 'left-0.75'}`} />
+                          <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${config.showDescription ? 'translate-x-4' : 'translate-x-0'}`} />
                         </button>
                       </div>
                       {config.showDescription && (
@@ -1283,9 +1266,9 @@ toast.${config.type}('${config.title}', {
                         <label className="text-[11px] font-extrabold text-text-2">Show Action Button</label>
                         <button 
                           onClick={() => setConfig(prev => ({ ...prev, showAction: !prev.showAction }))}
-                          className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${config.showAction ? 'bg-accent' : 'bg-border-strong'}`}
+                          className={`w-9 h-5 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${config.showAction ? 'bg-accent' : 'bg-gray-200'}`}
                         >
-                          <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-sm absolute transition-all ${config.showAction ? 'right-0.75' : 'left-0.75'}`} />
+                          <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${config.showAction ? 'translate-x-4' : 'translate-x-0'}`} />
                         </button>
                       </div>
                       {config.showAction && (
@@ -1403,9 +1386,9 @@ toast.${config.type}('${config.title}', {
                     <span className="text-xs font-bold text-text-2">Draw Outer Border</span>
                     <button 
                       onClick={() => setConfig(prev => ({ ...prev, hasBorder: !prev.hasBorder }))}
-                      className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${config.hasBorder ? 'bg-accent' : 'bg-border-strong'}`}
+                      className={`w-9 h-5 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${config.hasBorder ? 'bg-accent' : 'bg-gray-200'}`}
                     >
-                      <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-sm absolute transition-all ${config.hasBorder ? 'right-0.75' : 'left-0.75'}`} />
+                      <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${config.hasBorder ? 'translate-x-4' : 'translate-x-0'}`} />
                     </button>
                   </div>
 
@@ -1413,9 +1396,9 @@ toast.${config.type}('${config.title}', {
                     <span className="text-xs font-bold text-text-2">Progress Bar</span>
                     <button 
                       onClick={() => setConfig(prev => ({ ...prev, showProgress: !prev.showProgress }))}
-                      className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${config.showProgress ? 'bg-accent' : 'bg-border-strong'}`}
+                      className={`w-9 h-5 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${config.showProgress ? 'bg-accent' : 'bg-gray-200'}`}
                     >
-                      <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-sm absolute transition-all ${config.showProgress ? 'right-0.75' : 'left-0.75'}`} />
+                      <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${config.showProgress ? 'translate-x-4' : 'translate-x-0'}`} />
                     </button>
                   </div>
 
@@ -1423,9 +1406,9 @@ toast.${config.type}('${config.title}', {
                     <span className="text-xs font-bold text-text-2">Close on Escape Key</span>
                     <button 
                       onClick={() => setConfig(prev => ({ ...prev, closeOnEscape: !prev.closeOnEscape }))}
-                      className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${config.closeOnEscape ? 'bg-accent' : 'bg-border-strong'}`}
+                      className={`w-9 h-5 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${config.closeOnEscape ? 'bg-accent' : 'bg-gray-200'}`}
                     >
-                      <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-sm absolute transition-all ${config.closeOnEscape ? 'right-0.75' : 'left-0.75'}`} />
+                      <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${config.closeOnEscape ? 'translate-x-4' : 'translate-x-0'}`} />
                     </button>
                   </div>
 
@@ -1433,9 +1416,9 @@ toast.${config.type}('${config.title}', {
                     <span className="text-xs font-bold text-text-2">Show Timestamp</span>
                     <button 
                       onClick={() => setConfig(prev => ({ ...prev, showTimestamp: !prev.showTimestamp }))}
-                      className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${config.showTimestamp ? 'bg-accent' : 'bg-border-strong'}`}
+                      className={`w-9 h-5 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${config.showTimestamp ? 'bg-accent' : 'bg-gray-200'}`}
                     >
-                      <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-sm absolute transition-all ${config.showTimestamp ? 'right-0.75' : 'left-0.75'}`} />
+                      <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${config.showTimestamp ? 'translate-x-4' : 'translate-x-0'}`} />
                     </button>
                   </div>
 
@@ -1443,9 +1426,19 @@ toast.${config.type}('${config.title}', {
                     <span className="text-xs font-bold text-text-2">Show Close Button (X)</span>
                     <button 
                       onClick={() => setConfig(prev => ({ ...prev, showCloseButton: !prev.showCloseButton }))}
-                      className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${config.showCloseButton ? 'bg-accent' : 'bg-border-strong'}`}
+                      className={`w-9 h-5 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${config.showCloseButton ? 'bg-accent' : 'bg-gray-200'}`}
                     >
-                      <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-sm absolute transition-all ${config.showCloseButton ? 'right-0.75' : 'left-0.75'}`} />
+                      <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${config.showCloseButton ? 'translate-x-4' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-border-strong/40">
+                    <span className="text-xs font-bold text-text-2">Gooey Expanded Style</span>
+                    <button 
+                      onClick={() => setConfig(prev => ({ ...prev, variant: prev.variant === 'expanded' ? 'standard' : 'expanded' }))}
+                      className={`w-9 h-5 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${config.variant === 'expanded' ? 'bg-accent' : 'bg-gray-200'}`}
+                    >
+                      <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${config.variant === 'expanded' ? 'translate-x-4' : 'translate-x-0'}`} />
                     </button>
                   </div>
                 </div>
@@ -1484,12 +1477,12 @@ toast.${config.type}('${config.title}', {
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                          className="flex-1 min-h-0 bg-[#12131a] relative"
+                          className="flex-1 min-h-0 bg-white relative border-t border-border-strong"
                         >
                           <Editor
                             height="100%"
                             defaultLanguage="typescript"
-                            theme="vs-dark"
+                            theme="vs"
                             value={codeSnippet}
                             options={{
                               minimap: { enabled: false },
@@ -1533,7 +1526,8 @@ toast.${config.type}('${config.title}', {
                     showTimestamp: false,
                     showCloseButton: true,
                     position: 'bottom-right',
-                    type: 'success'
+                    type: 'success',
+                    variant: 'standard'
                   })}
                   className="flex items-center justify-center gap-1.5 text-[9px] font-extrabold text-text-3 hover:text-accent-2 transition-colors uppercase tracking-widest py-1"
                 >
@@ -1541,20 +1535,9 @@ toast.${config.type}('${config.title}', {
                   Reset Recipe
                 </button>
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      <div className="mt-20 border-t border-border-strong pt-16 flex flex-col items-center text-center select-none">
-        <div className="w-20 h-20 bg-gradient-to-tr from-accent/15 to-transparent rounded-full flex items-center justify-center mb-6">
-          <ToastMascot size={56} mood="excited" interactive={true} />
+            </div>
+          </div>
         </div>
-        <h3 className="text-lg font-extrabold text-text mb-2">Build Your Own Custom Flavor</h3>
-        <p className="text-text-2 text-xs md:text-sm max-w-sm mb-6 leading-relaxed">
-          Need a custom spring profile or personalized color variables? Click any card above to trigger the Advanced Visual Studio drawer.
-        </p>
       </div>
-    </div>
   )
 }
