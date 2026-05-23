@@ -24,7 +24,8 @@ export interface ToastItem {
 
 interface ToastContextType {
   toasts: ToastItem[]
-  addToast: (toast: Omit<ToastItem, 'id'>) => void
+  addToast: (toast: Omit<ToastItem, 'id'>) => string
+  updateToast: (id: string, toast: Partial<ToastItem>) => void
   removeToast: (id: string) => void
 }
 
@@ -36,6 +37,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const addToast = useCallback((toast: Omit<ToastItem, 'id'>) => {
     const id = Math.random().toString(36).substring(2, 9)
     setToasts((prev) => [...prev, { ...toast, id }])
+    return id
+  }, [])
+
+  const updateToast = useCallback((id: string, updatedFields: Partial<ToastItem>) => {
+    setToasts((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, ...updatedFields } : t))
+    )
   }, [])
 
   const removeToast = useCallback((id: string) => {
@@ -43,7 +51,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
+    <ToastContext.Provider value={{ toasts, addToast, updateToast, removeToast }}>
       {children}
     </ToastContext.Provider>
   )
