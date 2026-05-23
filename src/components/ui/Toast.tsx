@@ -23,6 +23,13 @@ interface ToastProps {
   showTimestamp?: boolean
   showCloseButton?: boolean
   variant?: 'standard' | 'expanded'
+  squishDelay?: number
+  springBounceToggle?: boolean
+  stiffness?: number
+  damping?: number
+  mass?: number
+  errorShake?: boolean
+  titleDescriptionSimultaneous?: boolean
 }
 
 const icons = {
@@ -53,7 +60,14 @@ export default function Toast({
   closeOnEscape = false,
   showTimestamp = false,
   showCloseButton = true,
-  variant = 'standard'
+  variant = 'standard',
+  squishDelay = 0,
+  springBounceToggle = true,
+  stiffness = 260,
+  damping = 20,
+  mass = 1,
+  errorShake = true,
+  titleDescriptionSimultaneous = false
 }: ToastProps) {
   const [progress, setProgress] = useState(100)
   const [timestamp] = useState(() => {
@@ -90,6 +104,60 @@ export default function Toast({
 
   const isDark = theme === 'dark'
 
+  // Unified spring transition config
+  const customTransition = springBounceToggle ? {
+    type: 'spring',
+    stiffness: stiffness,
+    damping: damping,
+    mass: mass,
+    delay: squishDelay / 1000
+  } : {
+    type: 'spring',
+    bounce: bounce,
+    duration: 0.6,
+    delay: squishDelay / 1000
+  }
+
+  // Morph spring behavior for layout size updates
+  const layoutTransition = {
+    type: 'spring',
+    stiffness: 280,
+    damping: 18,
+    mass: 0.8
+  }
+
+  const fullTransition = {
+    default: customTransition,
+    layout: layoutTransition
+  }
+
+  // Elastic blob squish entry configuration
+  const entryInitial = {
+    opacity: 0,
+    y: 50,
+    scaleX: 0.8,
+    scaleY: 1.2,
+    filter: 'blur(10px)',
+    x: 0
+  }
+
+  const entryAnimate = {
+    opacity: 1,
+    y: 0,
+    scaleX: [0.8, 1.15, 0.95, 1],
+    scaleY: [1.2, 0.85, 1.05, 1],
+    filter: 'blur(0px)',
+    x: errorShake && type === 'error' ? [0, -12, 12, -8, 8, -4, 4, 0] : 0,
+    transition: {
+      ...customTransition,
+      x: errorShake && type === 'error' ? {
+        duration: 0.4,
+        delay: (squishDelay + 150) / 1000,
+        ease: 'easeInOut'
+      } : undefined
+    }
+  }
+
   // Premium Gooey Expanded Double-Bubble layout
   if (variant === 'expanded') {
     let textColor = 'text-warning'
@@ -125,14 +193,10 @@ export default function Toast({
     return (
       <motion.div
         layout
-        initial={{ opacity: 0, y: 50, scale: 0.9, filter: 'blur(10px)' }}
-        animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+        initial={entryInitial}
+        animate={entryAnimate}
         exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-        transition={{
-          type: 'spring',
-          bounce: bounce,
-          duration: 0.6
-        }}
+        transition={fullTransition}
         className="relative flex flex-col items-center pointer-events-auto group min-w-[340px] max-w-[420px]"
       >
         {/* SVG Gooey Filter definition */}
@@ -161,7 +225,12 @@ export default function Toast({
         {/* Foreground Content */}
         <div className="relative z-10 w-full flex flex-col items-center select-none">
           {/* Top Title/Icon Bar */}
-          <div className="h-9 flex items-center justify-center gap-1.5 px-4">
+          <motion.div 
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: (squishDelay + (titleDescriptionSimultaneous ? 0 : 50)) / 1000 }}
+            className="h-9 flex items-center justify-center gap-1.5 px-4"
+          >
             {iconElement}
             <span 
               className={`text-[11px] font-extrabold tracking-wide uppercase ${textColor}`}
@@ -169,14 +238,19 @@ export default function Toast({
             >
               {title}
             </span>
-          </div>
+          </motion.div>
 
           {/* Bottom Content Area */}
           <div className="w-full pt-1 pb-4 px-5 flex items-center justify-between gap-4 mt-2">
             <div className="flex-1 min-w-0">
-              <p className={`text-xs font-semibold leading-relaxed ${isDark ? 'text-white/80' : 'text-text-2'}`}>
+              <motion.p 
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: (squishDelay + (titleDescriptionSimultaneous ? 0 : 150)) / 1000 }}
+                className={`text-xs font-semibold leading-relaxed ${isDark ? 'text-white/80' : 'text-text-2'}`}
+              >
                 {description || 'System warning active.'}
-              </p>
+              </motion.p>
               {showAction && actionText && (
                 <div className="mt-2">
                   <button 
@@ -229,14 +303,10 @@ export default function Toast({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 50, scale: 0.9, filter: 'blur(10px)' }}
-      animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+      initial={entryInitial}
+      animate={entryAnimate}
       exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-      transition={{
-        type: 'spring',
-        bounce: bounce,
-        duration: 0.6
-      }}
+      transition={fullTransition}
       className={containerClasses}
       style={customColor && hasBorder !== false ? { borderColor: customColor } : undefined}
     >
@@ -248,18 +318,28 @@ export default function Toast({
         )}
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <motion.div 
+            initial={{ opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: (squishDelay + (titleDescriptionSimultaneous ? 0 : 50)) / 1000 }}
+            className="flex items-center gap-1.5 flex-wrap"
+          >
             {showTimestamp && (
               <span className="text-[10px] font-bold text-text-3 font-mono">
                 [{timestamp}]
               </span>
             )}
             <h4 className="text-sm font-semibold truncate">{title}</h4>
-          </div>
+          </motion.div>
           {showDescription && description && (
-            <p className={`mt-1 text-xs leading-relaxed line-clamp-2 ${isDark ? 'text-white/60' : 'text-text-2'}`}>
+            <motion.p 
+              initial={{ opacity: 0, y: 3 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: (squishDelay + (titleDescriptionSimultaneous ? 0 : 150)) / 1000 }}
+              className={`mt-1 text-xs leading-relaxed line-clamp-2 ${isDark ? 'text-white/60' : 'text-text-2'}`}
+            >
               {description}
-            </p>
+            </motion.p>
           )}
           {showAction && actionText && (
             <div className="mt-2">

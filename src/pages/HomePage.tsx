@@ -8,10 +8,30 @@ import PlaygroundSection from './ExamplesPage'
 import DocsSection from './DocsPage'
 
 export default function HomePage() {
-  const { addToast } = useToasts()
+  const { addToast, updateToast } = useToasts()
   const [copied, setCopied] = useState(false)
   const [mascotMood, setMascotMood] = useState<'happy' | 'focused' | 'sleepy' | 'excited'>('happy')
+  const [mascotBounce, setMascotBounce] = useState(false)
   const location = useLocation()
+
+  useEffect(() => {
+    let lastScrollY = window.scrollY
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      // If user scrolls past 200px threshold, trigger mascot bounce & joy mood!
+      if (Math.abs(currentScrollY - lastScrollY) > 200) {
+        setMascotBounce(true)
+        setMascotMood('excited')
+        setTimeout(() => {
+          setMascotBounce(false)
+          setMascotMood('happy')
+        }, 1200)
+        lastScrollY = currentScrollY
+      }
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   useEffect(() => {
     const scrollToTarget = () => {
@@ -55,6 +75,33 @@ export default function HomePage() {
     }, 2000)
   }
 
+  const handleBuyCoffee = () => {
+    setMascotMood('excited')
+    setMascotBounce(true)
+    setTimeout(() => setMascotBounce(false), 1000)
+
+    const id = addToast({
+      type: 'loading',
+      title: 'Brewing premium espresso...',
+      description: 'Roasting selected single-origin beans...',
+      showDescription: true,
+      duration: 8000,
+      customColor: '#d97706'
+    })
+
+    setTimeout(() => {
+      updateToast(id, {
+        type: 'success',
+        title: 'Coffee Purchased! ☕✨',
+        description: 'You are an absolute legend! Thank you so much for supporting my solo dev journey!',
+        showDescription: true,
+        customColor: '#b45309',
+        bounce: 0.50
+      })
+      setMascotMood('excited')
+    }, 2000)
+  }
+
   const firePresetToast = (type: 'success' | 'error' | 'warning' | 'info' | 'default', title: string, desc: string, mood: 'happy' | 'excited' | 'focused' | 'sleepy') => {
     setMascotMood(mood)
     addToast({
@@ -91,8 +138,17 @@ export default function HomePage() {
           <div className="flex justify-center mb-10">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+              animate={{ 
+                scale: mascotBounce ? [1, 1.15, 0.92, 1] : 1,
+                rotate: mascotBounce ? [0, -8, 8, -5, 5, 0] : 0,
+                opacity: 1 
+              }}
+              transition={{ 
+                type: 'spring', 
+                stiffness: 260, 
+                damping: 18,
+                default: { duration: 0.6 }
+              }}
               className="relative"
             >
               <div className="absolute -inset-4 bg-gradient-to-tr from-accent/20 to-purple-500/10 rounded-full blur-2xl opacity-60 animate-pulse" />
@@ -129,11 +185,10 @@ export default function HomePage() {
             <motion.button 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => firePresetToast('success', 'Yum! Butter Toast', 'Perfectly golden, crispy, and warm.', 'excited')}
-              className="btn-primary w-full sm:w-auto px-8 py-4 justify-center text-sm shadow-accent"
+              onClick={handleBuyCoffee}
+              className="btn-primary w-full sm:w-auto px-8 py-4 justify-center text-sm shadow-accent bg-gradient-to-r from-amber-600 to-amber-800 border-none hover:opacity-95"
             >
-              Fire Warm Toast
-              <ArrowRight className="w-4 h-4 ml-1" />
+              Buy Me a Coffee ☕
             </motion.button>
 
             <div 

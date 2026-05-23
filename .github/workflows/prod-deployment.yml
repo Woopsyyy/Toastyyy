@@ -1,0 +1,175 @@
+name: Production Release & Deploy
+
+on:
+  push:
+    branches:
+      - prod
+
+concurrency:
+  group: deploy-prod-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+
+jobs:
+  validate-prod:
+    name: Production Pre-Flight Sanity Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Send Discord Deployment Started Notification
+        if: env.DISCORD_WEBHOOK != ''
+        run: |
+          curl -H "Content-Type: application/json" -X POST \
+            -d '{
+              "embeds": [{
+                "title": "🚢 Production Deploy Pipeline Started",
+                "description": "Running safety checks prior to production release on **prod** branch.",
+                "color": 3447003,
+                "fields": [
+                  {"name": "Repository", "value": "`${{ github.repository }}`", "inline": true},
+                  {"name": "Branch", "value": "`prod`", "inline": true},
+                  {"name": "Author", "value": "`${{ github.actor }}`", "inline": true},
+                  {"name": "Commit Message", "value": "${{ github.event.head_commit.message }}"},
+                  {"name": "Workflow Run", "value": "[View Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" }
+                ]
+              }]
+            }' \
+            "$DISCORD_WEBHOOK"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Prettier Validation
+        run: pnpm exec prettier --check "src/**/*.{ts,tsx,css}"
+
+      - name: Run ESLint
+        run: pnpm run lint
+
+      - name: Run TypeScript Compile
+        run: pnpm exec tsc --noEmit
+
+      - name: Run Unit Tests
+        run: |
+          if pnpm run | grep -q "test"; then
+            pnpm run test
+          else
+            echo "Skipping test execution."
+          fi
+
+      - name: Run Security Audits
+        run: pnpm audit --audit-level=high
+
+      - name: Validate Build
+        run: pnpm run build
+
+  deploy-prod:
+    name: Deploy to Production
+    needs: validate-prod
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Record Build Start Timestamp
+        id: start_time
+        run: echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify Vercel Credentials & Environment
+        id: check-creds
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "Vercel credentials missing. Aborting production release."
+            exit 1
+          else
+            echo "Credentials validated."
+          fi
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Info (Prod)
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts (Prod)
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel Production
+        id: deploy
+        run: |
+          DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "DEPLOY_URL=$DEPLOY_URL" >> $GITHUB_OUTPUT
+          echo "Production URL is: $DEPLOY_URL"
+
+      - name: Send Discord Deployment Success Notification
+        if: success() && env.DISCORD_WEBHOOK != ''
+        run: |
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          
+          curl -H "Content-Type: application/json" -X POST \
+            -d '{
+              "embeds": [{
+                "title": "🎉 Production Release Successful",
+                "description": "Toastyyy website successfully released to production!",
+                "color": 3066993,
+                "fields": [
+                  {"name": "Repository", "value": "`${{ github.repository }}`", "inline": true},
+                  {"name": "Release URL", "value": "[Open Production Live](${{ steps.deploy.outputs.DEPLOY_URL }})", "inline": false},
+                  {"name": "Commit Message", "value": "${{ github.event.head_commit.message }}"},
+                  {"name": "Author", "value": "`${{ github.actor }}`", "inline": true},
+                  {"name": "Deployment Duration", "value": "'"$DURATION"' seconds", "inline": true},
+                  {"name": "Workflow Run", "value": "[View Run Log](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" }
+                ]
+              }]
+            }' \
+            "$DISCORD_WEBHOOK"
+
+      - name: Send Discord Deployment Failure Notification
+        if: failure() && env.DISCORD_WEBHOOK != ''
+        run: |
+          curl -H "Content-Type: application/json" -X POST \
+            -d '{
+              "embeds": [{
+                "title": "🚨 Production Release Failed",
+                "description": "Critical failure occurred during production deploy steps.",
+                "color": 15158332,
+                "fields": [
+                  {"name": "Repository", "value": "`${{ github.repository }}`", "inline": true},
+                  {"name": "Branch", "value": "`prod`", "inline": true},
+                  {"name": "Author", "value": "`${{ github.actor }}`", "inline": true},
+                  {"name": "Workflow Run", "value": "[View Run Log](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" }
+                ]
+              }]
+            }' \
+            "$DISCORD_WEBHOOK"

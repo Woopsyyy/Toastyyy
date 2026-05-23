@@ -46,6 +46,7 @@ export default function PlaygroundSection() {
   const [activeCardId, setActiveCardId] = useState<number | null>(1)
   const [showCode, setShowCode] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [showDrawer, setShowDrawer] = useState(false)
 
   const [config, setConfig] = useState({
     title: 'System Dispatch Active',
@@ -63,7 +64,14 @@ export default function PlaygroundSection() {
     showCloseButton: true,
     position: 'bottom-right' as ToastPosition,
     type: 'default' as ToastType,
-    variant: 'standard' as 'standard' | 'expanded'
+    variant: 'standard' as 'standard' | 'expanded',
+    squishDelay: 0,
+    springBounceToggle: true,
+    stiffness: 260,
+    damping: 20,
+    mass: 1.0,
+    errorShake: true,
+    titleDescriptionSimultaneous: false
   })
 
   const handleCardClick = (example: any) => {
@@ -84,8 +92,21 @@ export default function PlaygroundSection() {
       showCloseButton: example.builderConfig.showCloseButton ?? true,
       position: example.builderConfig.position || 'bottom-right',
       type: example.builderConfig.type || 'default',
-      variant: example.builderConfig.variant || 'standard'
+      variant: example.builderConfig.variant || 'standard',
+      squishDelay: example.builderConfig.squishDelay ?? 0,
+      springBounceToggle: example.builderConfig.springBounceToggle ?? true,
+      stiffness: example.builderConfig.stiffness ?? 260,
+      damping: example.builderConfig.damping ?? 20,
+      mass: example.builderConfig.mass ?? 1.0,
+      errorShake: example.builderConfig.errorShake ?? true,
+      titleDescriptionSimultaneous: example.builderConfig.titleDescriptionSimultaneous ?? false
     })
+    
+    // Open VS Code floating engine drawer!
+    setShowDrawer(true)
+    
+    // Execute configured toast behavior!
+    example.action()
   }
 
   const handleFire = () => {
@@ -113,7 +134,14 @@ export default function PlaygroundSection() {
       showTimestamp: config.showTimestamp,
       showCloseButton: config.showCloseButton,
       position: config.position,
-      variant: config.variant
+      variant: config.variant,
+      squishDelay: config.squishDelay,
+      springBounceToggle: config.springBounceToggle,
+      stiffness: config.stiffness,
+      damping: config.damping,
+      mass: config.mass,
+      errorShake: config.errorShake,
+      titleDescriptionSimultaneous: config.titleDescriptionSimultaneous
     })
   }
 
@@ -147,7 +175,14 @@ toast.${config.type}('${config.title}', {
   bounce: ${config.bounce},
   customColor: '${config.customColor}',
   showAction: ${config.showAction},
-  actionText: '${config.actionText}'
+  actionText: '${config.actionText}',
+  squishDelay: ${config.squishDelay},
+  springBounceToggle: ${config.springBounceToggle},
+  stiffness: ${config.stiffness},
+  damping: ${config.damping},
+  mass: ${config.mass},
+  errorShake: ${config.errorShake},
+  titleDescriptionSimultaneous: ${config.titleDescriptionSimultaneous}
 })`
 
   const handleCopy = () => {
@@ -1123,7 +1158,7 @@ toast.${config.type}('${config.title}', {
             transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="text-text-2 text-sm md:text-base leading-relaxed"
           >
-            Discover beautiful preset configurations. Click any card to highlight it and open the slide-out visual builder drawer!
+            Discover beautiful preset configurations. Click any card to trigger it directly and reveal the floating settings drawer!
           </motion.p>
         </div>
 
@@ -1131,100 +1166,138 @@ toast.${config.type}('${config.title}', {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="flex flex-wrap bg-white rounded-2xl border border-border-strong p-1 shadow-sm select-none gap-1"
+          className="flex flex-wrap items-center bg-white rounded-2xl border border-border-strong p-1.5 shadow-sm select-none gap-3"
         >
-          {(['All', 'Basics', 'Layouts', 'Advanced', 'Easing', 'Promises'] as Category[]).map((cat) => (
-            <button 
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold transition-all relative ${activeCategory === cat ? 'bg-accent text-white shadow-sm' : 'text-text-3 hover:text-text-2'}`}
-            >
-              {cat}
-            </button>
-          ))}
+          <div className="flex flex-wrap gap-1">
+            {(['All', 'Basics', 'Layouts', 'Advanced', 'Easing', 'Promises'] as Category[]).map((cat) => (
+              <button 
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold transition-all relative ${activeCategory === cat ? 'bg-accent text-white shadow-sm' : 'text-text-3 hover:text-text-2'}`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+          <div className="h-5 w-[1px] bg-border-strong hidden sm:block" />
+          <button
+            onClick={() => setShowDrawer(true)}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase bg-accent-gradient text-white hover:scale-[1.03] transition-all shadow-md active:scale-95"
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            Configure Settings
+          </button>
         </motion.div>
       </div>
 
-      <div className="grid lg:grid-cols-12 gap-8 items-start mt-10">
-        <div className="lg:col-span-7">
-          <div className="grid sm:grid-cols-2 gap-6">
-            <AnimatePresence mode="popLayout">
-              {filteredExamples.map((example, i) => {
-                const isActive = activeCardId === example.id
-                return (
-                  <motion.div
-                    key={example.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.96, y: 15 }}
-                    animate={{ 
-                      opacity: 1, 
-                      scale: isActive ? 1.02 : 1, 
-                      y: 0,
-                      borderColor: isActive ? '#ff8c3b' : 'rgba(255,140,59,0.1)'
-                    }}
-                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                    transition={{ duration: 0.4, delay: i * 0.01 }}
-                    whileHover={{ y: -3 }}
-                    onClick={() => handleCardClick(example)}
-                    className={`glass rounded-[24px] border transition-all duration-300 overflow-hidden cursor-pointer flex flex-col justify-between ${isActive ? 'ring-2 ring-accent/20 shadow-[0_0_15px_rgba(255,140,59,0.15)] bg-white' : ''}`}
-                  >
-                    <div className="p-5 flex flex-col gap-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[8px] font-extrabold text-accent-2 bg-accent/10 px-2 py-0.5 rounded-full uppercase tracking-wider select-none">
-                          {example.category}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${example.color} border shadow-inner`}>
-                          {example.icon}
-                        </div>
-                        <div>
-                          <h3 className="text-xs font-extrabold text-text leading-tight">{example.title}</h3>
-                          <p className="text-[9px] font-bold text-text-3 uppercase tracking-wider mt-0.5 select-none">Preset #{example.id}00</p>
-                        </div>
-                      </div>
-
-                      <p className="text-text-2 text-[11px] leading-relaxed">
-                        {example.desc}
-                      </p>
-                    </div>
-
-                    <div className="px-5 py-3 border-t border-border-strong flex items-center justify-between bg-white/40">
-                      <div className="flex flex-wrap gap-1">
-                        {example.tags.map(tag => (
-                          <span key={tag} className="px-2 py-0.5 rounded bg-white border border-border-strong text-[8px] font-extrabold text-text-2 tracking-wider uppercase select-none">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-
-                      <span className="text-[9px] font-extrabold text-accent-2 flex items-center gap-1 hover:gap-1.5 transition-all select-none">
-                        Configure
-                        <Code className="w-3.5 h-3.5" />
+      {/* Showcase Grid (Full Width, 4 Cards Per Row) */}
+      <div className="w-full mt-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+          <AnimatePresence mode="popLayout">
+            {filteredExamples.map((example, i) => {
+              const isActive = activeCardId === example.id
+              return (
+                <motion.div
+                  key={example.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.96, y: 15 }}
+                  animate={{ 
+                    opacity: 1, 
+                    scale: isActive ? 1.02 : 1, 
+                    y: 0,
+                    borderColor: isActive ? '#ff8c3b' : 'rgba(255,140,59,0.1)'
+                  }}
+                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  transition={{ duration: 0.4, delay: i * 0.01 }}
+                  whileHover={{ y: -3 }}
+                  onClick={() => handleCardClick(example)}
+                  className={`glass rounded-[24px] border transition-all duration-300 overflow-hidden cursor-pointer flex flex-col justify-between ${isActive ? 'ring-2 ring-accent/20 shadow-[0_0_15px_rgba(255,140,59,0.15)] bg-white' : ''}`}
+                >
+                  <div className="p-5 flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[8px] font-extrabold text-accent-2 bg-accent/10 px-2 py-0.5 rounded-full uppercase tracking-wider select-none">
+                        {example.category}
                       </span>
                     </div>
-                  </motion.div>
-                )
-              })}
-            </AnimatePresence>
-          </div>
-        </div>
-        
-        <div className="lg:col-span-5 lg:sticky lg:top-24">
-          <div className="bg-white border border-border-strong rounded-[28px] shadow-xl flex flex-col justify-between overflow-hidden h-[calc(100vh-140px)]">
-            <div className="px-6 py-4 border-b border-border-strong flex items-center justify-between bg-surface-2 select-none">
-              <div className="flex items-center gap-2">
-                <Settings2 className="w-4 h-4 text-accent" />
-                <span className="text-sm font-extrabold text-text">Visual Studio Engine</span>
-              </div>
-            </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${example.color} border shadow-inner`}>
+                        {example.icon}
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-extrabold text-text leading-tight">{example.title}</h3>
+                        <p className="text-[9px] font-bold text-text-3 uppercase tracking-wider mt-0.5 select-none">Preset #{example.id}00</p>
+                      </div>
+                    </div>
+
+                    <p className="text-text-2 text-[11px] leading-relaxed">
+                      {example.desc}
+                    </p>
+                  </div>
+
+                  <div className="px-5 py-3 border-t border-border-strong flex items-center justify-between bg-white/40">
+                    <div className="flex flex-wrap gap-1">
+                      {example.tags.map(tag => (
+                        <span key={tag} className="px-2 py-0.5 rounded bg-white border border-border-strong text-[8px] font-extrabold text-text-2 tracking-wider uppercase select-none">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    <span className="text-[9px] font-extrabold text-accent-2 flex items-center gap-1 hover:gap-1.5 transition-all select-none">
+                      Configure
+                      <Code className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* VS Code Style Floating Engine Drawer */}
+      <AnimatePresence>
+        {showDrawer && (
+          <>
+            {/* Backdrop Blur Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDrawer(false)}
+              className="fixed inset-0 z-[90] bg-black/30 backdrop-blur-xs pointer-events-auto"
+            />
+
+            {/* Sidebar Slide Drawer */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 240 }}
+              className="fixed top-0 right-0 h-full w-[460px] max-w-full bg-white border-l border-border-strong z-[100] shadow-[0_0_40px_rgba(0,0,0,0.12)] flex flex-col justify-between overflow-hidden pointer-events-auto"
+            >
+              {/* Header */}
+              <div className="px-6 py-4.5 border-b border-border-strong flex items-center justify-between bg-surface-2 select-none">
+                <div className="flex items-center gap-2">
+                  <Settings2 className="w-4 h-4 text-accent" />
+                  <span className="text-sm font-extrabold text-text uppercase tracking-wider">Visual Studio Engine</span>
+                </div>
+                <button
+                  onClick={() => setShowDrawer(false)}
+                  className="p-1 rounded-lg hover:bg-border-strong text-text-3 hover:text-text transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Parameter Settings Area */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin">
                 <div className="flex justify-center py-4 bg-surface-2 rounded-2xl border border-border-strong/50 select-none">
                   <ToastMascot size={110} mood={getMascotMood()} interactive={true} />
                 </div>
 
+                {/* Content Configuration */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-1.5 select-none">
                     <Sliders className="w-3.5 h-3.5 text-accent-2" />
@@ -1284,13 +1357,14 @@ toast.${config.type}('${config.title}', {
                   </div>
                 </div>
 
+                {/* Appearance Settings */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-1.5 select-none">
                     <Sparkles className="w-3.5 h-3.5 text-accent-2" />
                     <span className="text-[10px] font-extrabold text-text-2 uppercase tracking-wider">Appearance Type</span>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    {(['default', 'success', 'error', 'warning', 'info'] as ToastType[]).map((type) => (
+                    {(['default', 'success', 'error', 'warning', 'info', 'loading'] as ToastType[]).map((type) => (
                       <button
                         key={type}
                         onClick={() => setConfig(prev => ({ ...prev, type }))}
@@ -1302,6 +1376,7 @@ toast.${config.type}('${config.title}', {
                   </div>
                 </div>
 
+                {/* Position Slots */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-1.5 select-none">
                     <Compass className="w-3.5 h-3.5 text-accent-2" />
@@ -1320,6 +1395,7 @@ toast.${config.type}('${config.title}', {
                   </div>
                 </div>
 
+                {/* Accent Style Config */}
                 <div className="space-y-4 bg-white border border-border-strong p-4 rounded-2xl shadow-sm">
                   <div className="flex items-center gap-1.5 select-none pb-2 border-b border-border-strong">
                     <Palette className="w-3.5 h-3.5 text-accent-2" />
@@ -1354,28 +1430,108 @@ toast.${config.type}('${config.title}', {
                   </div>
                 </div>
 
+                {/* Easing & High-Fidelity Springs */}
                 <div className="space-y-4">
-                  <div className="flex items-center gap-1.5 select-none">
-                    <Wind className="w-3.5 h-3.5 text-accent-2" />
-                    <span className="text-[10px] font-extrabold text-text-2 uppercase tracking-wider">Spring Physics</span>
+                  <div className="flex items-center justify-between select-none">
+                    <div className="flex items-center gap-1.5">
+                      <Wind className="w-3.5 h-3.5 text-accent-2" />
+                      <span className="text-[10px] font-extrabold text-text-2 uppercase tracking-wider">Spring Physics</span>
+                    </div>
+                    <button 
+                      onClick={() => setConfig(prev => ({ ...prev, springBounceToggle: !prev.springBounceToggle }))}
+                      className={`w-9 h-5 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${config.springBounceToggle ? 'bg-accent' : 'bg-gray-200'}`}
+                    >
+                      <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${config.springBounceToggle ? 'translate-x-4' : 'translate-x-0'}`} />
+                    </button>
                   </div>
-                  <div className="bg-white border border-border-strong p-3.5 rounded-xl shadow-sm">
-                    <div className="flex justify-between text-[11px] font-extrabold text-text-2 mb-2">
-                      <span>Bounce Coefficient</span>
-                      <span className="text-accent-2 font-mono">{config.bounce.toFixed(2)}</span>
+
+                  {config.springBounceToggle ? (
+                    <div className="space-y-4.5 bg-white border border-border-strong p-4 rounded-xl shadow-sm">
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-[11px] font-extrabold text-text-2">
+                          <span>Stiffness</span>
+                          <span className="text-accent-2 font-mono">{config.stiffness}</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="50" 
+                          max="500" 
+                          step="10"
+                          value={config.stiffness}
+                          onChange={(e) => setConfig(prev => ({ ...prev, stiffness: parseInt(e.target.value) }))}
+                          className="w-full accent-accent"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-[11px] font-extrabold text-text-2">
+                          <span>Damping</span>
+                          <span className="text-accent-2 font-mono">{config.damping}</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="5" 
+                          max="40" 
+                          step="1"
+                          value={config.damping}
+                          onChange={(e) => setConfig(prev => ({ ...prev, damping: parseInt(e.target.value) }))}
+                          className="w-full accent-accent"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-[11px] font-extrabold text-text-2">
+                          <span>Mass</span>
+                          <span className="text-accent-2 font-mono">{config.mass.toFixed(1)}</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0.1" 
+                          max="3.0" 
+                          step="0.1"
+                          value={config.mass}
+                          onChange={(e) => setConfig(prev => ({ ...prev, mass: parseFloat(e.target.value) }))}
+                          className="w-full accent-accent"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white border border-border-strong p-3.5 rounded-xl shadow-sm">
+                      <div className="flex justify-between text-[11px] font-extrabold text-text-2 mb-2">
+                        <span>Bounce Coefficient</span>
+                        <span className="text-accent-2 font-mono">{config.bounce.toFixed(2)}</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="0.00" 
+                        max="0.90" 
+                        step="0.05"
+                        value={config.bounce}
+                        onChange={(e) => setConfig(prev => ({ ...prev, bounce: parseFloat(e.target.value) }))}
+                        className="w-full accent-accent"
+                      />
+                    </div>
+                  )}
+
+                  {/* Squish Delay slider */}
+                  <div className="space-y-1.5 bg-white border border-border-strong p-3.5 rounded-xl shadow-sm">
+                    <div className="flex justify-between text-[11px] font-extrabold text-text-2">
+                      <span>Squish Delay</span>
+                      <span className="text-accent-2 font-mono">{config.squishDelay}ms</span>
                     </div>
                     <input 
                       type="range" 
-                      min="0.00" 
-                      max="0.90" 
-                      step="0.05"
-                      value={config.bounce}
-                      onChange={(e) => setConfig(prev => ({ ...prev, bounce: parseFloat(e.target.value) }))}
+                      min="0" 
+                      max="1000" 
+                      step="50"
+                      value={config.squishDelay}
+                      onChange={(e) => setConfig(prev => ({ ...prev, squishDelay: parseInt(e.target.value) }))}
                       className="w-full accent-accent"
                     />
                   </div>
                 </div>
 
+                {/* Additional Features & Behavior */}
                 <div className="space-y-3 bg-white border border-border-strong p-4 rounded-2xl shadow-sm">
                   <div className="flex items-center gap-1.5 select-none pb-2 border-b border-border-strong">
                     <Eye className="w-3.5 h-3.5 text-accent-2" />
@@ -1433,6 +1589,26 @@ toast.${config.type}('${config.title}', {
                   </div>
 
                   <div className="flex items-center justify-between pt-3 border-t border-border-strong/40">
+                    <span className="text-xs font-bold text-text-2">Shake on Error</span>
+                    <button 
+                      onClick={() => setConfig(prev => ({ ...prev, errorShake: !prev.errorShake }))}
+                      className={`w-9 h-5 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${config.errorShake ? 'bg-accent' : 'bg-gray-200'}`}
+                    >
+                      <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${config.errorShake ? 'translate-x-4' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-border-strong/40">
+                    <span className="text-xs font-bold text-text-2">Simultaneous Text Entry</span>
+                    <button 
+                      onClick={() => setConfig(prev => ({ ...prev, titleDescriptionSimultaneous: !prev.titleDescriptionSimultaneous }))}
+                      className={`w-9 h-5 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${config.titleDescriptionSimultaneous ? 'bg-accent' : 'bg-gray-200'}`}
+                    >
+                      <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${config.titleDescriptionSimultaneous ? 'translate-x-4' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-border-strong/40">
                     <span className="text-xs font-bold text-text-2">Gooey Expanded Style</span>
                     <button 
                       onClick={() => setConfig(prev => ({ ...prev, variant: prev.variant === 'expanded' ? 'standard' : 'expanded' }))}
@@ -1443,6 +1619,7 @@ toast.${config.type}('${config.title}', {
                   </div>
                 </div>
 
+                {/* Exporter snippet */}
                 <div className="w-full mt-6">
                   <motion.div 
                     initial={{ y: 15, opacity: 0 }}
@@ -1502,6 +1679,7 @@ toast.${config.type}('${config.title}', {
                 </div>
               </div>
 
+              {/* Bake & Fire Button */}
               <div className="p-6 border-t border-border-strong bg-surface-2 flex flex-col gap-2.5 select-none">
                 <button 
                   onClick={handleFire}
@@ -1527,7 +1705,14 @@ toast.${config.type}('${config.title}', {
                     showCloseButton: true,
                     position: 'bottom-right',
                     type: 'success',
-                    variant: 'standard'
+                    variant: 'standard',
+                    squishDelay: 0,
+                    springBounceToggle: true,
+                    stiffness: 260,
+                    damping: 20,
+                    mass: 1.0,
+                    errorShake: true,
+                    titleDescriptionSimultaneous: false
                   })}
                   className="flex items-center justify-center gap-1.5 text-[9px] font-extrabold text-text-3 hover:text-accent-2 transition-colors uppercase tracking-widest py-1"
                 >
@@ -1535,9 +1720,10 @@ toast.${config.type}('${config.title}', {
                   Reset Recipe
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }

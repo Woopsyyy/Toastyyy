@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "toastyy",
+  "type": "registry:ui",
+  "dependencies": [
+    "framer-motion",
+    "lucide-react"
+  ],
+  "files": [
+    {
+      "path": "src/components/ui/Toast.tsx",
+      "type": "registry:ui"
+    },
+    {
+      "path": "src/components/ui/ToastMascot.tsx",
+      "type": "registry:ui"
+    },
+    {
+      "path": "src/hooks/useToasts.tsx",
+      "type": "registry:hook"
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+name: Pull Request Validation & Review
+
+on:
+  pull_request:
+    branches:
+      - prod
+    types: [opened, closed, reopened, synchronize]
+  pull_request_review:
+    types: [submitted]
+
+concurrency:
+  group: pr-val-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+
+jobs:
+  pr-telemetry:
+    name: Pull Request Notifications
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR Opened Telemetry
+        if: github.event_name == 'pull_request' && github.event.action == 'opened' && env.DISCORD_WEBHOOK != ''
+        run: |
+          curl -H "Content-Type: application/json" -X POST \
+            -d '{
+              "embeds": [{
+                "title": "📖 Pull Request Opened",
+                "description": "A new Pull Request is ready for review.",
+                "color": 3447003,
+                "fields": [
+                  {"name": "PR Title", "value": "${{ github.event.pull_request.title }}", "inline": false},
+                  {"name": "Author", "value": "`${{ github.event.pull_request.user.login }}`", "inline": true},
+                  {"name": "Source Branch", "value": "`dev`", "inline": true},
+                  {"name": "Target Branch", "value": "`prod`", "inline": true},
+                  {"name": "PR URL", "value": "[View Pull Request](${{ github.event.pull_request.html_url }})"}
+                ]
+              }]
+            }' \
+            "$DISCORD_WEBHOOK"
+
+      - name: PR Approved/Rejected Telemetry
+        if: github.event_name == 'pull_request_review' && env.DISCORD_WEBHOOK != ''
+        run: |
+          STATE="${{ github.event.review.state }}"
+          COLOR=15158332
+          STATUS="Reviewed"
+          
+          if [ "$STATE" = "approved" ]; then
+            COLOR=3066993
+            STATUS="APPROVED"
+          elif [ "$STATE" = "changes_requested" ]; then
+            COLOR=15158332
+            STATUS="CHANGES REQUESTED"
+          fi
+          
+          curl -H "Content-Type: application/json" -X POST \
+            -d '{
+              "embeds": [{
+                "title": "💬 Pull Request Review Submitted",
+                "description": "PR Review Decision: **'"$STATUS"'**",
+                "color": '"$COLOR"',
+                "fields": [
+                  {"name": "PR Title", "value": "${{ github.event.pull_request.title }}", "inline": false},
+                  {"name": "Reviewer", "value": "`${{ github.event.review.user.login }}`", "inline": true},
+                  {"name": "Review Link", "value": "[View Review Details](${{ github.event.review.html_url }})", "inline": true}
+                ]
+              }]
+            }' \
+            "$DISCORD_WEBHOOK"
+
+      - name: PR Merged / Closed Telemetry
+        if: github.event_name == 'pull_request' && github.event.action == 'closed' && env.DISCORD_WEBHOOK != ''
+        run: |
+          MERGED="${{ github.event.pull_request.merged }}"
+          COLOR=8421504
+          STATUS="Closed without merging"
+          
+          if [ "$MERGED" = "true" ]; then
+            COLOR=8359053
+            STATUS="MERGED into production"
+          fi
+          
+          curl -H "Content-Type: application/json" -X POST \
+            -d '{
+              "embeds": [{
+                "title": "🔒 Pull Request Closed",
+                "description": "PR was **'"$STATUS"'**",
+                "color": '"$COLOR"',
+                "fields": [
+                  {"name": "PR Title", "value": "${{ github.event.pull_request.title }}", "inline": false},
+                  {"name": "Author", "value": "`${{ github.event.pull_request.user.login }}`", "inline": true},
+                  {"name": "PR URL", "value": "[View PR Details](${{ github.event.pull_request.html_url }})"}
+                ]
+              }]
+            }' \
+            "$DISCORD_WEBHOOK"

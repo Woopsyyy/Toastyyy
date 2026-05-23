@@ -21,6 +21,13 @@ export interface ToastItem {
   position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right'
   duration?: number
   variant?: 'standard' | 'expanded'
+  squishDelay?: number
+  springBounceToggle?: boolean
+  stiffness?: number
+  damping?: number
+  mass?: number
+  errorShake?: boolean
+  titleDescriptionSimultaneous?: boolean
 }
 
 interface ToastContextType {
