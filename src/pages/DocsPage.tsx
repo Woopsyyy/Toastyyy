@@ -34,13 +34,13 @@ export default function DocsPage() {
   const [copiedQuick, setCopiedQuick] = useState(false)
 
   const handleCopyInstall = () => {
-    navigator.clipboard.writeText('npm install toastyyy')
+    navigator.clipboard.writeText('npm install toastyy')
     setCopiedInstall(true)
     setTimeout(() => setCopiedInstall(false), 2000)
   }
 
   const handleCopyQuick = () => {
-    navigator.clipboard.writeText(`import { ToastProvider } from 'toastyyy'
+    navigator.clipboard.writeText(`import { ToastProvider } from 'toastyy'
 
 export default function App() {
   return (
@@ -162,7 +162,7 @@ export default function App() {
             <div className="bg-[#12131a] rounded-2xl p-4 flex items-center justify-between font-mono text-[11px] text-white/90 border border-white/5 select-all">
               <div className="flex items-center gap-2">
                 <span className="text-accent">$</span>
-                <span>npm install toastyyy</span>
+                <span>npm install toastyy</span>
               </div>
               <button 
                 onClick={handleCopyInstall}
@@ -194,7 +194,7 @@ export default function App() {
               </div>
               <pre className="p-4 font-mono text-[11px] text-white/80 overflow-x-auto leading-relaxed select-all">
                 <code>
-                  {`import { ToastProvider } from 'toastyyy'
+                  {`import { ToastProvider } from 'toastyy'
 
 export default function App() {
   return (

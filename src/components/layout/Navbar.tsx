@@ -62,10 +62,10 @@ export default function Navbar() {
           </a>
           <div className="relative group hidden sm:block">
             <button 
-              onClick={() => navigator.clipboard.writeText('npm install toastyyy')}
+              onClick={() => navigator.clipboard.writeText('npm install toastyy')}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-accent to-accent-2 hover:scale-[1.03] transition-transform duration-300 shadow-md"
             >
-              npm i toastyyy
+              npm i toastyy
             </button>
           </div>
         </div>

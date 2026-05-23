@@ -156,7 +156,7 @@ export default function ExamplesPage() {
     }
   }
 
-  const codeSnippet = `import { toast } from 'toastyyy'
+  const codeSnippet = `import { toast } from 'toastyy'
 
 toast.${config.type}('${config.title}', {
   description: ${config.showDescription ? `'${config.description}'` : 'undefined'},

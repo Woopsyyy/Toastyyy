@@ -10,12 +10,12 @@ export default function HomePage() {
   const [mascotMood, setMascotMood] = useState<'happy' | 'focused' | 'sleepy' | 'excited'>('happy')
 
   const copyCommand = () => {
-    navigator.clipboard.writeText('npm install toastyyy')
+    navigator.clipboard.writeText('npm install toastyy')
     setCopied(true)
     addToast({
       type: 'success',
       title: 'Command Copied!',
-      description: 'Run it in your terminal to install Toastyyy.',
+      description: 'Run it in your terminal to install Toastyy.',
     })
     setMascotMood('excited')
     setTimeout(() => {
@@ -111,7 +111,7 @@ export default function HomePage() {
             >
               <div className="flex items-center gap-2.5">
                 <Terminal className="w-4 h-4 text-accent" />
-                <span className="text-text-2">npm i toastyyy</span>
+                <span className="text-text-2">npm i toastyy</span>
               </div>
               <div className="p-1 rounded-lg bg-surface-2 group-hover:bg-accent/10 transition-colors">
                 {copied ? (

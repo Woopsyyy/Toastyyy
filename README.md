@@ -20,7 +20,7 @@ Toastyyy is a performance-first, highly customizable React notification system b
 Add the library to your React project:
 
 ```bash
-npm install toastyyy
+npm install toastyy
 ```
 
 Make sure you have `framer-motion` (v11.x or later) and `lucide-react` installed as peer dependencies.
@@ -33,7 +33,7 @@ Make sure you have `framer-motion` (v11.x or later) and `lucide-react` installed
 Initialize the global toast queue by wrapping your tree context with the `ToastProvider`:
 
 ```tsx
-import { ToastProvider } from 'toastyyy'
+import { ToastProvider } from 'toastyy'
 
 export default function App() {
   return (
@@ -48,7 +48,7 @@ export default function App() {
 Use the `useToasts` hook to fire or programmatically update toasts:
 
 ```tsx
-import { useToasts } from 'toastyyy'
+import { useToasts } from 'toastyy'
 
 export default function MainDashboard() {
   const { addToast } = useToasts()
@@ -106,7 +106,7 @@ interface ToastItem {
 You can dynamically transition a loader toast into a resolved success or error state by leveraging returned IDs and `updateToast`:
 
 ```tsx
-import { useToasts } from 'toastyyy'
+import { useToasts } from 'toastyy'
 
 const triggerProcess = () => {
   const id = addToast({
