@@ -56,7 +56,7 @@ export default function Navbar() {
 
         <div className="flex items-center ml-auto gap-4">
           <a
-            href="https://github.com/Woopsyyy/ToastyyyWebsite"
+            href="https://github.com/Woopsyyy/Toastyyy"
             target="_blank"
             rel="noopener noreferrer"
             className="text-text-2 hover:text-text transition-colors duration-300 w-10 h-10 flex items-center justify-center rounded-xl hover:bg-surface-2 border border-transparent hover:border-border-strong"

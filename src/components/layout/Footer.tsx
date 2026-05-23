@@ -10,7 +10,7 @@ const footerLinks = {
   Resources: [
     { label: "Documentation", path: "/docs" },
     { label: "npm", path: "https://www.npmjs.com" },
-    { label: "GitHub", path: "https://github.com/Woopsyyy/ToastyyyWebsite" },
+    { label: "GitHub", path: "https://github.com/Woopsyyy/Toastyyy" },
   ],
   Legal: [
     { label: "MIT License", path: "#" },

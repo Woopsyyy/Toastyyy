@@ -128,3 +128,26 @@ const triggerProcess = () => {
   }, 2000)
 }
 ```
+
+---
+
+## 🛠️ Git Workflow Automation & Branch Safety
+
+To ensure maximum safety and ease of use, Toastyyy features a built-in cross-platform Git workflow automation system. This handles automatic branch-switching and enforces safety policies during builds and deployments.
+
+### Available Command Scripts:
+
+- **`pnpm run dev`** (or `npm run dev`)
+  - Automatically switches your local workspace to the `dev` branch.
+  - Starts the local Vite development server.
+  - *Safety:* Blocks checkout and alerts you if you have uncommitted changes on a different branch to prevent merge conflicts.
+
+- **`pnpm run push:dev`** (or `npm run push:dev`)
+  - Ensures you are on the `dev` branch.
+  - Stages all your local changes automatically.
+  - **Prompts you in the terminal to input a custom commit message** before committing.
+  - Pushes your commits safely up to the remote `origin dev` branch.
+  - *Safety:* Production branch `prod` is locked down for maximum safety; all production pushes must be handled via manual pull requests.
+
+For complete workflow rules, safety hook internals, team guidelines, and recommended GitHub branch protection policies, check out our **[🛠️ Git Workflow & Safety Guide](file:///home/woopsy/project/Random/Toasty/GIT_WORKFLOW.md)**.
+
