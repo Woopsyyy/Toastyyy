@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useToasts } from '../hooks/useToasts'
 import ToastMascot from '../components/ui/ToastMascot'
+import { gooeyToast } from 'goey-toast'
 
 type Category = 'All' | 'Status' | 'Transactional' | 'System'
 
@@ -43,6 +44,17 @@ export default function ExamplesPage() {
   }
 
   const examples = [
+    {
+      id: 7,
+      title: 'Goey-Toast Reference',
+      category: 'Transactional',
+      desc: 'Fire the original gooey-toast reference in the bottom-left of the screen.',
+      tags: ['Sonner', 'Reference'],
+      likes: 642,
+      icon: <Sparkles className="w-5 h-5 text-purple-500" />,
+      color: 'bg-purple-500/10 border-purple-500/20 text-purple-500',
+      action: () => gooeyToast.success('Reference Gooey-Toast fired successfully!')
+    },
     {
       id: 1,
       title: 'Cloud Core Sync',
