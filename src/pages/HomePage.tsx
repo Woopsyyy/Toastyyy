@@ -15,8 +15,6 @@ import {
 } from "lucide-react";
 import { useToasts } from "../hooks/useToasts";
 import ToastMascot from "../components/ui/ToastMascot";
-import PlaygroundSection from "./ExamplesPage";
-import DocsSection from "./DocsPage";
 
 export default function HomePage() {
   const { addToast, updateToast } = useToasts();
@@ -47,35 +45,10 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const scrollToTarget = () => {
-      const hash = location.hash || "";
-      const path = location.pathname || "";
-
-      let elementId = "";
-      if (path === "/docs" || hash === "#docs") {
-        elementId = "docs";
-      } else if (
-        path === "/examples" ||
-        path === "/builder" ||
-        hash === "#playground"
-      ) {
-        elementId = "playground";
-      }
-
-      if (elementId) {
-        const element = document.getElementById(elementId);
-        if (element) {
-          setTimeout(() => {
-            element.scrollIntoView({ behavior: "smooth", block: "start" });
-          }, 100);
-        }
-      } else if (path === "/" && !hash) {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-    };
-
-    scrollToTarget();
-  }, [location]);
+    if (location.pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [location.pathname]);
 
   const copyCommand = () => {
     navigator.clipboard.writeText("npm install toastyy");
@@ -466,10 +439,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      <PlaygroundSection />
-
-      <DocsSection />
 
       <section className="py-20 px-6 bg-gradient-to-t from-accent/5 to-transparent border-t border-border-strong relative z-10">
         <div className="container-tight text-center">
