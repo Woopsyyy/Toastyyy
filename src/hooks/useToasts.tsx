@@ -7,8 +7,19 @@ export interface ToastItem {
   type: ToastType
   title: string
   description?: string
-  duration?: number
+  showDescription?: boolean
+  showAction?: boolean
+  actionText?: string
+  customColor?: string
+  hasBorder?: boolean
+  bounce?: number
+  theme?: 'light' | 'dark'
   showProgress?: boolean
+  closeOnEscape?: boolean
+  showTimestamp?: boolean
+  showCloseButton?: boolean
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right'
+  duration?: number
 }
 
 interface ToastContextType {

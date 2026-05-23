@@ -21,13 +21,25 @@ export default function Layout() {
 
       <GooeyToaster position="bottom-left" />
 
-      <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none">
-        <AnimatePresence mode="popLayout">
-          {toasts.map((toast) => (
-            <Toast key={toast.id} {...toast} onClose={removeToast} />
-          ))}
-        </AnimatePresence>
-      </div>
+      {(['top-left', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'] as const).map((pos) => {
+        const positionToasts = toasts.filter((t) => (t.position || 'bottom-right') === pos)
+        
+        let positionClasses = 'bottom-6 right-6'
+        if (pos === 'top-left') positionClasses = 'top-24 left-6'
+        else if (pos === 'top-right') positionClasses = 'top-24 right-6'
+        else if (pos === 'bottom-left') positionClasses = 'bottom-6 left-6'
+        else if (pos === 'bottom-center') positionClasses = 'bottom-6 left-1/2 -translate-x-1/2 items-center'
+
+        return (
+          <div key={pos} className={`fixed ${positionClasses} z-[100] flex flex-col gap-3 pointer-events-none`}>
+            <AnimatePresence mode="popLayout">
+              {positionToasts.map((toast) => (
+                <Toast key={toast.id} {...toast} onClose={removeToast} />
+              ))}
+            </AnimatePresence>
+          </div>
+        )
+      })}
 
       <Footer />
     </div>
