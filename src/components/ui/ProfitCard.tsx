@@ -1,22 +1,22 @@
-import React from 'react'
-import { motion } from 'framer-motion'
-import { CircleDollarSign } from 'lucide-react'
+import React from "react";
+import { motion } from "framer-motion";
+import { CircleDollarSign } from "lucide-react";
 
 interface ProfitCardProps {
-  title?: string
-  value?: string
-  trend?: string
-  subtext?: string
+  title?: string;
+  value?: string;
+  trend?: string;
+  subtext?: string;
 }
 
-export default function ProfitCard({ 
-  title = "Total Profit", 
-  value = "₱0.00", 
-  trend = "+8%", 
-  subtext = "Paid projects" 
+export default function ProfitCard({
+  title = "Total Profit",
+  value = "₱0.00",
+  trend = "+8%",
+  subtext = "Paid projects",
 }: ProfitCardProps) {
   return (
-    <motion.article 
+    <motion.article
       whileHover={{ y: -4 }}
       className="bg-slate-900 border border-white/5 rounded-3xl p-6 flex items-center justify-between gap-6 shadow-2xl spotlight cursor-pointer group"
     >
@@ -27,9 +27,9 @@ export default function ProfitCard({
           </div>
           <span className="text-sm font-semibold text-white/90">{title}</span>
         </div>
-        
+
         <div className="text-3xl font-bold text-white mb-2">{value}</div>
-        
+
         <div className="flex items-center gap-2 text-xs text-slate-400">
           <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 font-bold">
             {trend}
@@ -39,7 +39,11 @@ export default function ProfitCard({
       </div>
 
       <div className="w-24 h-12">
-        <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="overflow-visible">
+        <svg
+          viewBox="0 0 100 50"
+          preserveAspectRatio="none"
+          className="overflow-visible"
+        >
           <defs>
             <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
@@ -63,5 +67,5 @@ export default function ProfitCard({
         </svg>
       </div>
     </motion.article>
-  )
+  );
 }

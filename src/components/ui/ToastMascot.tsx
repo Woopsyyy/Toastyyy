@@ -1,68 +1,72 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { motion, useMotionValue, useSpring } from 'framer-motion'
+import React, { useState, useEffect, useRef } from "react";
+import { motion, useMotionValue, useSpring } from "framer-motion";
 
 interface ToastMascotProps {
-  size?: number
-  mood?: 'happy' | 'focused' | 'sleepy' | 'excited'
-  interactive?: boolean
+  size?: number;
+  mood?: "happy" | "focused" | "sleepy" | "excited";
+  interactive?: boolean;
 }
 
-export default function ToastMascot({ size = 120, mood = 'happy', interactive = true }: ToastMascotProps) {
-  const [isBlinking, setIsBlinking] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+export default function ToastMascot({
+  size = 120,
+  mood = "happy",
+  interactive = true,
+}: ToastMascotProps) {
+  const [isBlinking, setIsBlinking] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const mouseX = useMotionValue(0)
-  const mouseY = useMotionValue(0)
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
 
-  const springConfig = { damping: 25, stiffness: 250 }
-  const eyeX = useSpring(mouseX, springConfig)
-  const eyeY = useSpring(mouseY, springConfig)
+  const springConfig = { damping: 25, stiffness: 250 };
+  const eyeX = useSpring(mouseX, springConfig);
+  const eyeY = useSpring(mouseY, springConfig);
 
   useEffect(() => {
-    let blinkTimeout: ReturnType<typeof setTimeout>
+    let blinkTimeout: ReturnType<typeof setTimeout>;
     const triggerBlink = () => {
-      setIsBlinking(true)
-      setTimeout(() => setIsBlinking(false), 150)
-      const nextDelay = Math.random() * 4000 + 2000
-      blinkTimeout = setTimeout(triggerBlink, nextDelay)
-    }
-    blinkTimeout = setTimeout(triggerBlink, 3000)
-    return () => clearTimeout(blinkTimeout)
-  }, [])
+      setIsBlinking(true);
+      setTimeout(() => setIsBlinking(false), 150);
+      const nextDelay = Math.random() * 4000 + 2000;
+      blinkTimeout = setTimeout(triggerBlink, nextDelay);
+    };
+    blinkTimeout = setTimeout(triggerBlink, 3000);
+    return () => clearTimeout(blinkTimeout);
+  }, []);
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!interactive || !containerRef.current) return
-    const rect = containerRef.current.getBoundingClientRect()
-    const x = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2)
-    const y = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2)
-    mouseX.set(x * 6)
-    mouseY.set(y * 4)
-  }
+    if (!interactive || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+    const y = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+    mouseX.set(x * 6);
+    mouseY.set(y * 4);
+  };
 
   const handleMouseLeave = () => {
-    mouseX.set(0)
-    mouseY.set(0)
-  }
+    mouseX.set(0);
+    mouseY.set(0);
+  };
 
   const getMouthPath = () => {
     switch (mood) {
-      case 'excited':
-        return 'M 42,58 Q 50,68 58,58 Z'
-      case 'focused':
-        return 'M 44,58 L 56,58'
-      case 'sleepy':
-        return 'M 44,56 Q 50,54 56,56'
-      case 'happy':
+      case "excited":
+        return "M 42,58 Q 50,68 58,58 Z";
+      case "focused":
+        return "M 44,58 L 56,58";
+      case "sleepy":
+        return "M 44,56 Q 50,54 56,56";
+      case "happy":
       default:
-        return 'M 43,56 Q 50,63 57,56'
+        return "M 43,56 Q 50,63 57,56";
     }
-  }
+  };
 
   const getEyeHeight = () => {
-    if (isBlinking) return 1
-    if (mood === 'sleepy') return 2
-    return 8
-  }
+    if (isBlinking) return 1;
+    if (mood === "sleepy") return 2;
+    return 8;
+  };
 
   return (
     <div
@@ -73,7 +77,15 @@ export default function ToastMascot({ size = 120, mood = 'happy', interactive = 
       className="relative select-none flex items-center justify-center cursor-pointer"
     >
       <motion.div
-        whileHover={interactive ? { scale: 1.06, rotate: [0, -3, 3, 0], transition: { duration: 0.5 } } : {}}
+        whileHover={
+          interactive
+            ? {
+                scale: 1.06,
+                rotate: [0, -3, 3, 0],
+                transition: { duration: 0.5 },
+              }
+            : {}
+        }
         whileTap={interactive ? { scale: 0.94 } : {}}
         animate={{
           y: [0, -4, 0],
@@ -82,12 +94,15 @@ export default function ToastMascot({ size = 120, mood = 'happy', interactive = 
           y: {
             duration: 5,
             repeat: Infinity,
-            ease: 'easeInOut',
+            ease: "easeInOut",
           },
         }}
         className="w-full h-full relative"
       >
-        <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_8px_24px_rgba(255,140,59,0.15)]">
+        <svg
+          viewBox="0 0 100 100"
+          className="w-full h-full drop-shadow-[0_8px_24px_rgba(255,140,59,0.15)]"
+        >
           <defs>
             <radialGradient id="crustGrad" cx="50%" cy="40%" r="50%">
               <stop offset="0%" stopColor="#e27c3e" />
@@ -103,8 +118,17 @@ export default function ToastMascot({ size = 120, mood = 'happy', interactive = 
               <stop offset="100%" stopColor="#fbc02d" />
             </linearGradient>
             <filter id="gooey">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
-              <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8" result="goo" />
+              <feGaussianBlur
+                in="SourceGraphic"
+                stdDeviation="1.5"
+                result="blur"
+              />
+              <feColorMatrix
+                in="blur"
+                mode="matrix"
+                values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8"
+                result="goo"
+              />
             </filter>
           </defs>
 
@@ -141,8 +165,10 @@ export default function ToastMascot({ size = 120, mood = 'happy', interactive = 
               transform="rotate(-8 45 15)"
               fill="url(#butterGrad)"
               className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)]"
-              animate={mood === 'excited' ? { y: [0, -3, 0], rotate: [-8, 2, -8] } : {}}
-              transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+              animate={
+                mood === "excited" ? { y: [0, -3, 0], rotate: [-8, 2, -8] } : {}
+              }
+              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
             />
             <path
               d="M 45,21 Q 48,26 47,29"
@@ -164,7 +190,7 @@ export default function ToastMascot({ size = 120, mood = 'happy', interactive = 
               animate={{ scaleY: getEyeHeight() / 8 }}
               transition={{ duration: 0.1 }}
             />
-            {mood !== 'sleepy' && !isBlinking && (
+            {mood !== "sleepy" && !isBlinking && (
               <motion.circle
                 cx="34.5"
                 cy="46.5"
@@ -183,7 +209,7 @@ export default function ToastMascot({ size = 120, mood = 'happy', interactive = 
               animate={{ scaleY: getEyeHeight() / 8 }}
               transition={{ duration: 0.1 }}
             />
-            {mood !== 'sleepy' && !isBlinking && (
+            {mood !== "sleepy" && !isBlinking && (
               <motion.circle
                 cx="62.5"
                 cy="46.5"
@@ -199,7 +225,7 @@ export default function ToastMascot({ size = 120, mood = 'happy', interactive = 
             stroke="#0d0d0f"
             strokeWidth="3.5"
             strokeLinecap="round"
-            fill={mood === 'excited' ? '#f43f5e' : 'none'}
+            fill={mood === "excited" ? "#f43f5e" : "none"}
           />
 
           <circle cx="28" cy="55" r="3.5" fill="#f43f5e" opacity="0.25" />
@@ -207,5 +233,5 @@ export default function ToastMascot({ size = 120, mood = 'happy', interactive = 
         </svg>
       </motion.div>
     </div>
-  )
+  );
 }
