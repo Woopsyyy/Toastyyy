@@ -46,11 +46,7 @@
 .DS_Store
 Thumbs.db
 
-# 🚀 Monorepos & Nested Repositories (Preventing conflicts)
-toasty-package/
-packages/
-.turbo/
-**/.turbo/
+
 
 # 📝 System Log Files
 *.log
