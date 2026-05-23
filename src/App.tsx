@@ -1,12 +1,12 @@
-import { Routes, Route } from 'react-router-dom'
-import { AnimatePresence } from 'framer-motion'
-import { ToastProvider } from './hooks/useToasts'
-import Layout from './components/layout/Layout'
-import HomePage from './pages/HomePage'
-import ExamplesPage from './pages/ExamplesPage'
-import PlaygroundPage from './pages/PlaygroundPage'
-import DocsSection from './pages/DocsPage'
-import ChangelogPage from './pages/ChangelogPage'
+import { Routes, Route } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+import { ToastProvider } from "./hooks/useToasts";
+import Layout from "./components/layout/Layout";
+import HomePage from "./pages/HomePage";
+import ExamplesPage from "./pages/ExamplesPage";
+import PlaygroundPage from "./pages/PlaygroundPage";
+import DocsSection from "./pages/DocsPage";
+import ChangelogPage from "./pages/ChangelogPage";
 
 export default function App() {
   return (
@@ -23,5 +23,5 @@ export default function App() {
         </Routes>
       </AnimatePresence>
     </ToastProvider>
-  )
+  );
 }

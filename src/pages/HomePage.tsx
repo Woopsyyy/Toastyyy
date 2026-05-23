@@ -465,7 +465,7 @@ export default function HomePage() {
                 Return to Top
               </motion.button>
               <motion.a
-                href="https://github.com/Woopsyyy/ToastyyyWebsite"
+                href="https://github.com/Woopsyyy/Toastyyy"
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.02 }}
