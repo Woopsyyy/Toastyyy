@@ -22,7 +22,7 @@ export default function Navbar() {
           <div className="w-8 h-8 flex items-center justify-center">
             <ToastMascot size={32} interactive={false} />
           </div>
-          <span className="bg-gradient-to-r from-accent to-accent-2 bg-clip-text text-transparent">
+          <span className="text-accent-gradient">
             Toastyyy
           </span>
         </Link>
@@ -63,7 +63,7 @@ export default function Navbar() {
           <div className="relative group hidden sm:block">
             <button 
               onClick={() => navigator.clipboard.writeText('npm install toastyy')}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-accent to-accent-2 hover:scale-[1.03] transition-transform duration-300 shadow-md"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-accent-gradient hover:scale-[1.03] transition-transform duration-300 shadow-md"
             >
               npm i toastyy
             </button>

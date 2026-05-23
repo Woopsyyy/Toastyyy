@@ -124,6 +124,17 @@
     background-clip: text;
   }
 
+  .bg-accent-gradient {
+    background: linear-gradient(135deg, #ff8c3b 0%, #e06c1f 100%) !important;
+  }
+
+  .text-accent-gradient {
+    background: linear-gradient(135deg, #ff8c3b 0%, #e06c1f 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   .orb {
     border-radius: 50%;
     filter: blur(120px);

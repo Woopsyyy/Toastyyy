@@ -1311,7 +1311,7 @@ toast.${config.type}('${config.title}', {
                       <button
                         key={type}
                         onClick={() => setConfig(prev => ({ ...prev, type }))}
-                        className={`px-2.5 py-2 rounded-xl border text-[10px] font-bold capitalize transition-all ${config.type === type ? 'bg-gradient-to-r from-accent to-accent-2 border-transparent text-white shadow-sm' : 'bg-white border-border-strong text-text-2 hover:border-accent/40'}`}
+                        className={`px-2.5 py-2 rounded-xl border text-[10px] font-bold capitalize transition-all ${config.type === type ? 'bg-accent-gradient border-transparent text-white shadow-sm' : 'bg-white border-border-strong text-text-2 hover:border-accent/40'}`}
                       >
                         {type}
                       </button>
@@ -1329,7 +1329,7 @@ toast.${config.type}('${config.title}', {
                       <button
                         key={pos}
                         onClick={() => setConfig(prev => ({ ...prev, position: pos }))}
-                        className={`px-3 py-2 rounded-xl border text-[10px] font-bold transition-all ${config.position === pos ? 'bg-gradient-to-r from-accent to-accent-2 border-transparent text-white shadow-sm' : 'bg-white border-border-strong text-text-2 hover:border-accent/40'}`}
+                        className={`px-3 py-2 rounded-xl border text-[10px] font-bold transition-all ${config.position === pos ? 'bg-accent-gradient border-transparent text-white shadow-sm' : 'bg-white border-border-strong text-text-2 hover:border-accent/40'}`}
                       >
                         {pos.replace('-', ' ')}
                       </button>
