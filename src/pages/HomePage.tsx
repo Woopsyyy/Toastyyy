@@ -1,48 +1,121 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import {
-  Sparkles,
-  Terminal,
   ArrowRight,
-  Zap,
-  Layers,
-  Code2,
-  Heart,
   Copy,
-  Check,
-  Star,
+  Flame,
+  Layers3,
+  Quote,
+  Sparkles,
+  TimerReset,
+  Wand2,
 } from "lucide-react";
-import { useToasts } from "../hooks/useToasts";
+import { useEffect, useState } from "react";
+import { useLocation, Link } from "react-router-dom";
 import ToastMascot from "../components/ui/ToastMascot";
+import {
+  useToasts,
+  type ToastInput,
+  type ToastVisualStyle,
+} from "../hooks/useToasts";
+
+const flavors: Array<
+  ToastInput & {
+    name: string;
+    mood: "happy" | "focused" | "sleepy" | "excited";
+  }
+> = [
+  {
+    name: "Strawberry Jam",
+    mood: "excited",
+    type: "success",
+    title: "Strawberry jam launch",
+    description:
+      "Classic gooey physics with a warm success finish and layered motion.",
+    visualStyle: "classic",
+    theme: "light",
+    fillColor: "#FFFFFF",
+    borderColor: "#FFD3C0",
+    position: "bottom-right",
+    variant: "expanded",
+    showTimestamp: true,
+    showAction: true,
+    actionText: "Undo",
+    actionSuccessText: "Restored",
+  },
+  {
+    name: "Aurora Glaze",
+    mood: "happy",
+    type: "info",
+    title: "Aurora glaze synced",
+    description:
+      "Glassmorphic depth, chromatic bloom, and a soft premium drift.",
+    visualStyle: "glassmorphic-aurora",
+    theme: "light",
+    fillColor: "#FFFFFF",
+    borderColor: "#EBD8FF",
+    position: "top-center",
+    variant: "expanded",
+    showTimestamp: true,
+  },
+  {
+    name: "Neon Crunch",
+    mood: "focused",
+    type: "warning",
+    title: "Neon crunch armed",
+    description:
+      "Dark shell, vivid glow, and tactile swipe dismissal on demand.",
+    visualStyle: "glow-neon",
+    theme: "dark",
+    fillColor: "#07131E",
+    borderColor: "#F1A91D",
+    position: "top-right",
+    variant: "expanded",
+    showTimestamp: true,
+  },
+  {
+    name: "Cyber Marmalade",
+    mood: "sleepy",
+    type: "error",
+    title: "Cyber marmalade overflow",
+    description:
+      "Angular contrast, semantic danger glow, and controlled queue pressure.",
+    visualStyle: "liquid-cyberpunk",
+    theme: "dark",
+    fillColor: "#090914",
+    borderColor: "#F97316",
+    position: "bottom-left",
+    variant: "expanded",
+    errorShake: true,
+  },
+];
+
+const pillars = [
+  {
+    title: "Deterministic toast lifecycle",
+    copy: "Hover pause, collapse timing, swipe dismissal, and promise transitions now behave as a single interaction model.",
+  },
+  {
+    title: "Queue policy as a first-class control",
+    copy: "Stack or purge old toasts deliberately instead of letting overflow behavior stay implicit.",
+  },
+  {
+    title: "Premium skins, not one-off CSS tricks",
+    copy: "Classic, Aurora, Neon, and Cyberpunk each carry their own contrast, shadow, and motion personality.",
+  },
+];
 
 export default function HomePage() {
   const { addToast, updateToast } = useToasts();
+  const location = useLocation();
+  const { scrollYProgress } = useScroll();
+  const heroLift = useTransform(scrollYProgress, [0, 0.25], [0, -70]);
+  const haloShift = useTransform(scrollYProgress, [0, 1], [0, 160]);
+  const sideGlowShift = useTransform(scrollYProgress, [0, 1], [0, -120]);
   const [copied, setCopied] = useState(false);
+  const [activeFlavor, setActiveFlavor] = useState(0);
   const [mascotMood, setMascotMood] = useState<
     "happy" | "focused" | "sleepy" | "excited"
   >("happy");
-  const [mascotBounce, setMascotBounce] = useState(false);
-  const location = useLocation();
-
-  useEffect(() => {
-    let lastScrollY = window.scrollY;
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      // If user scrolls past 200px threshold, trigger mascot bounce & joy mood!
-      if (Math.abs(currentScrollY - lastScrollY) > 200) {
-        setMascotBounce(true);
-        setMascotMood("excited");
-        setTimeout(() => {
-          setMascotBounce(false);
-          setMascotMood("happy");
-        }, 1200);
-        lastScrollY = currentScrollY;
-      }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   useEffect(() => {
     if (location.pathname === "/") {
@@ -50,432 +123,294 @@ export default function HomePage() {
     }
   }, [location.pathname]);
 
-  const copyCommand = () => {
-    navigator.clipboard.writeText("npm install toastyy");
+  const copyInstall = async () => {
+    await navigator.clipboard.writeText("npm install toastyy");
     setCopied(true);
     addToast({
       type: "success",
-      title: "Command Copied!",
-      description: "Run it in your terminal to install Toastyy.",
+      title: "Install command copied",
+      description: "Paste it into the terminal and start baking notifications.",
+      visualStyle: "glassmorphic-aurora",
+      duration: 2200,
     });
-    setMascotMood("excited");
-    setTimeout(() => {
-      setCopied(false);
-      setMascotMood("happy");
-    }, 2000);
+    window.setTimeout(() => setCopied(false), 1800);
   };
 
-  const handleBuyCoffee = () => {
-    setMascotMood("excited");
-    setMascotBounce(true);
-    setTimeout(() => setMascotBounce(false), 1000);
-
-    const id = addToast({
-      type: "loading",
-      title: "Brewing premium espresso...",
-      description: "Roasting selected single-origin beans...",
-      showDescription: true,
-      duration: 8000,
-      customColor: "#d97706",
-    });
-
-    setTimeout(() => {
-      updateToast(id, {
-        type: "success",
-        title: "Coffee Purchased! ☕✨",
-        description:
-          "You are an absolute legend! Thank you so much for supporting my solo dev journey!",
-        showDescription: true,
-        customColor: "#b45309",
-        bounce: 0.5,
-      });
-      setMascotMood("excited");
-    }, 2000);
-  };
-
-  const firePresetToast = (
-    type: "success" | "error" | "warning" | "info" | "default",
-    title: string,
-    desc: string,
-    mood: "happy" | "excited" | "focused" | "sleepy",
-  ) => {
-    setMascotMood(mood);
+  const playFlavor = (index: number) => {
+    const flavor = flavors[index];
+    setActiveFlavor(index);
+    setMascotMood(flavor.mood);
     addToast({
-      type,
-      title,
-      description: desc,
+      ...flavor,
+      duration: 5200,
       showProgress: true,
-      duration: 4000,
+      pauseOnHover: true,
+      swipeToDismiss: true,
     });
-    setTimeout(() => setMascotMood("happy"), 3000);
+    window.setTimeout(() => setMascotMood("happy"), 2200);
   };
+
+  const runPromiseDemo = () => {
+    setMascotMood("excited");
+    const toastId = addToast({
+      type: "loading",
+      title: "Proofing dough",
+      description: "Promise toast is waiting for the motion system to settle.",
+      visualStyle: "glassmorphic-aurora",
+      position: "bottom-center",
+      variant: "expanded",
+      duration: 7000,
+      showTimestamp: true,
+    });
+
+    window.setTimeout(() => {
+      updateToast(toastId, {
+        type: "success",
+        title: "Proof complete",
+        description:
+          "The promise resolved into a success state without leaving the stack.",
+        visualStyle: "classic",
+        duration: 4200,
+      });
+      setMascotMood("happy");
+    }, 1800);
+  };
+
+  const currentFlavor = flavors[activeFlavor];
 
   return (
-    <div className="flex flex-col min-h-screen relative overflow-hidden">
-      <div className="absolute top-[-10%] left-[5%] w-[600px] h-[600px] bg-[#ff8c3b]/5 orb animate-float" />
-      <div className="absolute bottom-[20%] right-[-5%] w-[700px] h-[700px] bg-[#e056fd]/5 orb animate-float-delayed" />
+    <div className="relative overflow-hidden">
+      <motion.div
+        style={{ y: haloShift }}
+        className="pointer-events-none absolute left-[-8%] top-10 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(255,140,59,0.2),transparent_68%)] blur-3xl"
+      />
+      <motion.div
+        style={{ y: sideGlowShift }}
+        className="pointer-events-none absolute right-[-10%] top-[16%] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(14,165,233,0.12),transparent_70%)] blur-3xl"
+      />
 
-      <section className="pt-24 pb-16 md:pt-36 md:pb-24 px-6 relative z-10 flex flex-col items-center">
-        <div className="container-tight text-center">
+      <section className="relative z-10 px-6 pb-20 pt-24 md:pb-28 md:pt-32">
+        <div className="container-tight grid gap-12 xl:grid-cols-[1.1fr_0.9fr] xl:items-center">
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            style={{ y: heroLift }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border-accent/20 mb-8 cursor-pointer select-none"
-            whileHover={{ scale: 1.03 }}
-            onClick={() =>
-              firePresetToast(
-                "default",
-                "Hello Friend!",
-                "I am Toastyyy! Click around to explore my states.",
-                "excited",
-              )
-            }
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-6"
           >
-            <Sparkles className="w-3.5 h-3.5 text-accent animate-pulse" />
-            <span className="text-[11px] font-extrabold text-accent-2 tracking-widest uppercase">
-              Meet Toastyyy 1.0 • Built for Motion
-            </span>
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent/15 bg-white/75 px-4 py-1.5 backdrop-blur-sm">
+              <Sparkles className="h-4 w-4 text-accent" />
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-accent-2">
+                Motion-first toast system
+              </span>
+            </div>
+
+            <h1 className="max-w-3xl text-5xl font-black tracking-tight text-text md:text-7xl md:leading-[1.02]">
+              Micro-feedbacks should feel baked, not bolted on.
+            </h1>
+
+            <p className="max-w-2xl text-base leading-8 text-text-2 md:text-lg">
+              Toastyyy now ships with organic morphing, hover pause, tactile
+              swipe, queue overflow policy, and four premium skins that make the
+              stack feel designed instead of merely rendered.
+            </p>
+
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => playFlavor(activeFlavor)}
+                className="btn-primary justify-center px-8 py-4 shadow-accent"
+              >
+                <Flame className="h-4 w-4" />
+                Launch current flavor
+              </button>
+              <button
+                type="button"
+                onClick={copyInstall}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-border-strong bg-white px-6 py-4 text-sm font-bold text-text transition hover:border-accent/40 hover:text-accent-2"
+              >
+                <Copy className="h-4 w-4" />
+                {copied ? "Copied npm install toastyy" : "Copy install command"}
+              </button>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              {pillars.map((pillar) => (
+                <div
+                  key={pillar.title}
+                  className="rounded-[26px] border border-border-strong bg-white/80 p-5 shadow-sm backdrop-blur-sm"
+                >
+                  <h2 className="text-sm font-black text-text">
+                    {pillar.title}
+                  </h2>
+                  <p className="mt-3 text-xs leading-6 text-text-2">
+                    {pillar.copy}
+                  </p>
+                </div>
+              ))}
+            </div>
           </motion.div>
 
-          <div className="flex justify-center mb-10">
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{
-                scale: mascotBounce ? [1, 1.15, 0.92, 1] : 1,
-                rotate: mascotBounce ? [0, -8, 8, -5, 5, 0] : 0,
-                opacity: 1,
-              }}
-              transition={{
-                type: "spring",
-                stiffness: 260,
-                damping: 18,
-                default: { duration: 0.6 },
-              }}
-              className="relative"
-            >
-              <div className="absolute -inset-4 bg-gradient-to-tr from-accent/20 to-purple-500/10 rounded-full blur-2xl opacity-60 animate-pulse" />
-              <ToastMascot size={150} mood={mascotMood} interactive={true} />
-            </motion.div>
-          </div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="text-5xl md:text-7xl font-extrabold tracking-tight text-text leading-[1.08] mb-8 text-balance"
-          >
-            Beautifully{" "}
-            <span className="gradient-text-warm font-black">animated</span>,
-            <br />
-            gooey &{" "}
-            <span className="italic font-serif font-semibold text-accent-2">
-              delicious
-            </span>
-            .
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="text-lg md:text-xl text-text-2 mb-12 max-w-2xl mx-auto leading-relaxed text-balance"
-          >
-            A high-fidelity React notification ecosystem built on buttery spring
-            physics. Bring your interface to life with organic, gooey,
-            hardware-accelerated micro-feedback.
-          </motion.p>
-
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-lg mx-auto mb-20"
+            initial={{ opacity: 0, scale: 0.94 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+            className="relative"
           >
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleBuyCoffee}
-              className="btn-primary w-full sm:w-auto px-8 py-4 justify-center text-sm shadow-accent bg-gradient-to-r from-amber-600 to-amber-800 border-none hover:opacity-95"
-            >
-              Buy Me a Coffee ☕
-            </motion.button>
-
-            <div
-              onClick={copyCommand}
-              className="flex items-center justify-between w-full sm:w-auto gap-4 px-5 py-4 bg-white border border-border rounded-2xl font-mono text-xs shadow-sm hover:border-accent hover:shadow-md transition-all duration-300 cursor-pointer group relative overflow-hidden select-none"
-            >
-              <div className="flex items-center gap-2.5">
-                <Terminal className="w-4 h-4 text-accent" />
-                <span className="text-text-2">npm i toastyy</span>
+            <div className="absolute inset-6 rounded-[40px] bg-[radial-gradient(circle_at_top,rgba(255,140,59,0.18),transparent_55%)] blur-2xl" />
+            <div className="relative overflow-hidden rounded-[38px] border border-border-strong bg-white/85 p-7 shadow-[0_30px_80px_rgba(18,19,26,0.08)] backdrop-blur-md">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-text-3">
+                    Baking lab highlight
+                  </p>
+                  <h2 className="mt-2 text-2xl font-black text-text">
+                    {currentFlavor.name}
+                  </h2>
+                  <p className="mt-2 text-sm leading-7 text-text-2">
+                    {currentFlavor.description}
+                  </p>
+                </div>
+                <div className="relative flex h-28 w-28 items-center justify-center rounded-full bg-white shadow-[0_24px_60px_rgba(255,140,59,0.12)]">
+                  <div className="absolute inset-4 rounded-full bg-[radial-gradient(circle,rgba(255,140,59,0.16),transparent_72%)]" />
+                  <ToastMascot size={90} mood={mascotMood} interactive={true} />
+                </div>
               </div>
-              <div className="p-1 rounded-lg bg-surface-2 group-hover:bg-accent/10 transition-colors">
-                {copied ? (
-                  <Check className="w-3.5 h-3.5 text-accent" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5 text-text-3 group-hover:text-accent" />
-                )}
+
+              <div className="mt-8 grid gap-3 md:grid-cols-2">
+                {flavors.map((flavor, index) => (
+                  <button
+                    key={flavor.name}
+                    type="button"
+                    onClick={() => playFlavor(index)}
+                    className={`rounded-[26px] border p-4 text-left transition ${
+                      activeFlavor === index
+                        ? "border-accent/35 bg-accent/5 shadow-[0_18px_40px_rgba(255,140,59,0.12)]"
+                        : "border-border-strong bg-white hover:border-accent/30"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-black text-text">
+                        {flavor.name}
+                      </span>
+                      <Wand2 className="h-4 w-4 text-accent-2" />
+                    </div>
+                    <p className="mt-2 text-xs leading-6 text-text-2">
+                      {flavor.title}
+                    </p>
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={runPromiseDemo}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-border-strong bg-surface-2 px-5 py-3 text-xs font-black uppercase tracking-[0.18em] text-text transition hover:border-accent/35 hover:text-accent-2"
+                >
+                  <TimerReset className="h-4 w-4" />
+                  Promise showcase
+                </button>
+                <Link
+                  to="/builder"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-border-strong bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.18em] text-text transition hover:border-accent/35 hover:text-accent-2"
+                >
+                  Open motion lab
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
             </div>
           </motion.div>
         </div>
       </section>
 
-      <section className="py-20 px-6 bg-white/40 backdrop-blur-md border-y border-border-strong relative z-10">
-        <div className="container-tight">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-text mb-4">
-              Tactile Playground Canvas
-            </h2>
-            <p className="text-text-2 text-sm md:text-base max-w-xl mx-auto leading-relaxed">
-              Every interaction triggers real-time spring transformations. Hover
-              over and click these gourmet flavors to sample Toastyyy's fluid
-              curves.
+      <section className="relative z-10 border-y border-border-strong bg-white/55 px-6 py-20 backdrop-blur-sm md:py-24">
+        <div className="container-tight space-y-12">
+          <motion.div
+            initial={{ opacity: 0, y: 28 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+            className="max-w-3xl"
+          >
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-text-3">
+              How the system behaves
             </p>
-          </div>
+            <h2 className="mt-3 text-3xl font-black text-text md:text-5xl">
+              Morph first. Collapse late. Never let interaction continuity snap.
+            </h2>
+          </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-8 items-stretch">
-            <div className="glass rounded-[32px] p-8 flex flex-col justify-between border-accent/10 hover:border-accent/30 transition-all duration-500 shadow-xl group">
-              <div>
-                <h3 className="text-xl font-extrabold text-text mb-3">
-                  Chef's Specials
-                </h3>
-                <p className="text-text-2 text-xs md:text-sm mb-8 leading-relaxed">
-                  We've prepared specific preset profiles with tailored spring
-                  tension, gooey filters, and custom layouts to suit any user
-                  event.
-                </p>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    onClick={() =>
-                      firePresetToast(
-                        "success",
-                        "Strawberry Jam Toast",
-                        "Sweet, vibrant, and bursting with berry energy.",
-                        "excited",
-                      )
-                    }
-                    className="flex flex-col items-start p-4 rounded-2xl border border-border hover:border-accent/40 bg-white hover:bg-accent/5 transition-all text-left group/btn"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-3 group-hover/btn:scale-105 transition-transform">
-                      <Zap className="w-4 h-4 text-emerald-500" />
-                    </div>
-                    <span className="text-[13px] font-bold text-text">
-                      Strawberry Jam
-                    </span>
-                    <span className="text-[11px] text-text-3 mt-1 leading-normal">
-                      Gooey & Sweet
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      firePresetToast(
-                        "error",
-                        "Burnt Garlic Slice",
-                        "Warning: High flavor heat detected!",
-                        "sleepy",
-                      )
-                    }
-                    className="flex flex-col items-start p-4 rounded-2xl border border-border hover:border-red-500/40 bg-white hover:bg-red-50/5 transition-all text-left group/btn"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center mb-3 group-hover/btn:scale-105 transition-transform">
-                      <Star className="w-4 h-4 text-red-500" />
-                    </div>
-                    <span className="text-[13px] font-bold text-text">
-                      Burnt Garlic
-                    </span>
-                    <span className="text-[11px] text-text-3 mt-1 leading-normal">
-                      Spicy Warning
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      firePresetToast(
-                        "info",
-                        "Whipped Cream Spread",
-                        "Light, clean, and perfectly balanced cream.",
-                        "happy",
-                      )
-                    }
-                    className="flex flex-col items-start p-4 rounded-2xl border border-border hover:border-indigo-500/40 bg-white hover:bg-indigo-50/5 transition-all text-left group/btn"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center mb-3 group-hover/btn:scale-105 transition-transform">
-                      <Sparkles className="w-4 h-4 text-indigo-500" />
-                    </div>
-                    <span className="text-[13px] font-bold text-text">
-                      Whipped Cream
-                    </span>
-                    <span className="text-[11px] text-text-3 mt-1 leading-normal">
-                      Info Splash
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      firePresetToast(
-                        "warning",
-                        "Cheddar Melt Drop",
-                        "Careful, this slice is incredibly hot.",
-                        "focused",
-                      )
-                    }
-                    className="flex flex-col items-start p-4 rounded-2xl border border-border hover:border-amber-500/40 bg-white hover:bg-amber-50/5 transition-all text-left group/btn"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center mb-3 group-hover/btn:scale-105 transition-transform">
-                      <Layers className="w-4 h-4 text-amber-500" />
-                    </div>
-                    <span className="text-[13px] font-bold text-text">
-                      Cheddar Melt
-                    </span>
-                    <span className="text-[11px] text-text-3 mt-1 leading-normal">
-                      Slow Melt alert
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-[#ffd899]/30 to-[#ffeebb]/20 border border-accent/10 rounded-[32px] p-8 flex flex-col items-center justify-center relative overflow-hidden group shadow-xl">
-              <div className="absolute top-4 left-4 flex gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-black/10" />
-                <div className="w-2.5 h-2.5 rounded-full bg-black/10" />
-                <div className="w-2.5 h-2.5 rounded-full bg-black/10" />
-              </div>
-
+          <div className="grid gap-6 md:grid-cols-3">
+            {pillars.map((pillar, index) => (
               <motion.div
-                whileHover={{ scale: 1.05, rotate: 1 }}
-                className="w-40 h-40 bg-white rounded-3xl shadow-xl border border-border-strong flex flex-col items-center justify-center text-center p-6 cursor-pointer relative"
+                key={pillar.title}
+                initial={{ opacity: 0, y: 28 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.25 }}
+                transition={{
+                  duration: 0.55,
+                  delay: index * 0.08,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                className="rounded-[30px] border border-border-strong bg-white px-6 py-7 shadow-sm"
               >
-                <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-accent animate-ping" />
-                <ToastMascot size={90} mood={mascotMood} interactive={false} />
-                <p className="text-[10px] font-extrabold font-mono text-accent mt-3 uppercase tracking-wider">
-                  Canvas Live
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+                  <Layers3 className="h-5 w-5" />
+                </div>
+                <h3 className="text-lg font-black text-text">{pillar.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-text-2">
+                  {pillar.copy}
                 </p>
               </motion.div>
-
-              <div className="mt-8 text-center max-w-xs">
-                <h4 className="text-sm font-extrabold text-text mb-1">
-                  Organic Gaze Mechanics
-                </h4>
-                <p className="text-text-2 text-xs leading-relaxed">
-                  Observe the Mascot's focus. Hover over the canvas to see its
-                  eyes follow your exact pointer vectors in high precision.
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="py-24 px-6 relative z-10">
-        <div className="container-tight">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-text mb-4">
-              Premium Craftsmanship
-            </h2>
-            <p className="text-text-2 max-w-xl mx-auto leading-relaxed">
-              Every detail is engineered with absolute performance in mind. Say
-              goodbye to blocky notifications.
+      <section className="relative z-10 px-6 py-24">
+        <div className="container-tight grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+            className="rounded-[34px] border border-border-strong bg-slate-950 p-8 text-white shadow-[0_26px_70px_rgba(15,23,42,0.24)]"
+          >
+            <Quote className="h-8 w-8 text-amber-300" />
+            <p className="mt-6 text-2xl font-black leading-[1.35] md:text-3xl">
+              Crafting micro-feedbacks is not about decoration. It is about
+              making state changes feel legible, tactile, and worth trusting.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <motion.div
-              whileHover={{ y: -6 }}
-              className="p-8 rounded-[28px] border border-border bg-white shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
-            >
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent mb-6">
-                  <Zap className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-bold text-text mb-3">
-                  60fps Transitions
-                </h3>
-                <p className="text-text-2 text-xs md:text-sm leading-relaxed">
-                  Leverages CSS GPU transforms and Framer Motion spring physics
-                  to maintain absolute layout stability.
-                </p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -6 }}
-              className="p-8 rounded-[28px] border border-border bg-white shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
-            >
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent mb-6">
-                  <Layers className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-bold text-text mb-3">
-                  Elastic Stacking
-                </h3>
-                <p className="text-text-2 text-xs md:text-sm leading-relaxed">
-                  Smart notification stack spacing prevents overlapping layouts.
-                  Slices stack smoothly with elastic collision.
-                </p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -6 }}
-              className="p-8 rounded-[28px] border border-border bg-white shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
-            >
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent mb-6">
-                  <Code2 className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-bold text-text mb-3">
-                  Zero Configuration
-                </h3>
-                <p className="text-text-2 text-xs md:text-sm leading-relaxed">
-                  Plug-and-play architecture integrates right out of the box
-                  with zero boilerplate styling.
-                </p>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 px-6 bg-gradient-to-t from-accent/5 to-transparent border-t border-border-strong relative z-10">
-        <div className="container-tight text-center">
-          <div className="max-w-xl mx-auto">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-border rounded-full shadow-sm mb-6 text-xs text-text-2 select-none">
-              <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 animate-pulse" />
-              <span>Built by developers, for developers</span>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-text mb-6">
-              Make your app feel elite
-            </h2>
-            <p className="text-text-2 text-sm md:text-base mb-10 leading-relaxed text-balance">
-              Take the next step in UI excellence. Empower your web applications
-              with Toastyyy's warm, responsive, and delightful notification
-              patterns.
+          <motion.div
+            initial={{ opacity: 0, x: 24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-5"
+          >
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-text-3">
+              Crafting micro-feedbacks
             </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                className="btn-primary justify-center shadow-accent"
-              >
-                Return to Top
-              </motion.button>
-              <motion.a
-                href="https://github.com/Woopsyyy/Toastyyy"
-                target="_blank"
-                rel="noopener noreferrer"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="btn-ghost justify-center"
-              >
-                GitHub Repository
-              </motion.a>
-            </div>
-          </div>
+            <h2 className="text-3xl font-black text-text md:text-5xl">
+              The stack should teach the product’s rhythm in under a second.
+            </h2>
+            <p className="text-base leading-8 text-text-2">
+              A good toast carries hierarchy, communicates urgency, and leaves
+              the viewport with the same grace it entered. That is why Toastyyy
+              now treats animation timing, stack policy, and theme identity as
+              one system rather than unrelated toggles.
+            </p>
+            <Link
+              to="/docs"
+              className="inline-flex items-center gap-2 rounded-full border border-border-strong bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.18em] text-text transition hover:border-accent/35 hover:text-accent-2"
+            >
+              Read the API notes
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </motion.div>
         </div>
       </section>
     </div>

@@ -1,53 +1,71 @@
-import { describe, test, expect } from "vitest";
-import { ToastItem, ToastType } from "../hooks/useToasts";
+import { describe, expect, test } from "vitest";
+import {
+  applyQueueConfig,
+  matchesToastFilter,
+  type ToastItem,
+  type ToastQueueConfig,
+} from "../hooks/useToasts";
 
-describe("Toast System Context Queue", () => {
-  test("initial state has 0 toasts", () => {
-    const mockToasts: ToastItem[] = [];
-    expect(mockToasts.length).toBe(0);
+const baseToast = (overrides: Partial<ToastItem> = {}): ToastItem => ({
+  id: "toast-1",
+  type: "success",
+  title: "Toast ready",
+  position: "bottom-right",
+  variant: "standard",
+  theme: "light",
+  visualStyle: "classic",
+  showDescription: true,
+  showProgress: true,
+  showCloseButton: true,
+  closeButtonPosition: "top-right",
+  pauseOnHover: true,
+  swipeToDismiss: true,
+  ...overrides,
+});
+
+describe("toast queue helpers", () => {
+  test("dismiss-oldest strategy trims the queue to maxToasts", () => {
+    const config: ToastQueueConfig = {
+      maxToasts: 2,
+      overflowStrategy: "dismiss-oldest",
+    };
+
+    const queue = applyQueueConfig(
+      [
+        baseToast({ id: "toast-1" }),
+        baseToast({ id: "toast-2" }),
+        baseToast({ id: "toast-3" }),
+      ],
+      config,
+    );
+
+    expect(queue.map((toast) => toast.id)).toEqual(["toast-2", "toast-3"]);
   });
 
-  test("successfully adds, updates, and removes toast items from queue", () => {
-    let toastsList: ToastItem[] = [];
-
-    const mockAddToast = (toast: Omit<ToastItem, "id">) => {
-      const id = "test-id-123";
-      toastsList.push({ ...toast, id } as ToastItem);
-      return id;
+  test("stack strategy preserves the full queue in state", () => {
+    const config: ToastQueueConfig = {
+      maxToasts: 2,
+      overflowStrategy: "stack",
     };
 
-    const mockUpdateToast = (id: string, fields: Partial<ToastItem>) => {
-      toastsList = toastsList.map((t) =>
-        t.id === id ? ({ ...t, ...fields } as ToastItem) : t,
-      );
-    };
+    const queue = applyQueueConfig(
+      [
+        baseToast({ id: "toast-1" }),
+        baseToast({ id: "toast-2" }),
+        baseToast({ id: "toast-3" }),
+      ],
+      config,
+    );
 
-    const mockRemoveToast = (id: string) => {
-      toastsList = toastsList.filter((t) => t.id !== id);
-    };
+    expect(queue).toHaveLength(3);
+  });
 
-    // 1. Add toast assertion
-    const id = mockAddToast({
-      type: "success",
-      title: "Baking sourdough",
-      description: "Entering chamber 02",
-      variant: "standard",
-    });
-    expect(toastsList.length).toBe(1);
-    expect(toastsList[0].id).toBe("test-id-123");
-    expect(toastsList[0].title).toBe("Baking sourdough");
-    expect(toastsList[0].type).toBe("success");
+  test("dismiss filters match by type or id", () => {
+    const errorToast = baseToast({ id: "toast-error", type: "error" });
 
-    // 2. Update toast assertion (morph state)
-    mockUpdateToast(id, {
-      title: "Perfectly golden warm toast",
-      type: "success",
-    });
-    expect(toastsList[0].title).toBe("Perfectly golden warm toast");
-    expect(toastsList[0].type).toBe("success");
-
-    // 3. Remove toast assertion
-    mockRemoveToast(id);
-    expect(toastsList.length).toBe(0);
+    expect(matchesToastFilter(errorToast, { type: "error" })).toBe(true);
+    expect(matchesToastFilter(errorToast, { type: "success" })).toBe(false);
+    expect(matchesToastFilter(errorToast, "toast-error")).toBe(true);
+    expect(matchesToastFilter(errorToast, "toast-other")).toBe(false);
   });
 });

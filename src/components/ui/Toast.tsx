@@ -1,4 +1,4 @@
-import { animate, motion, useMotionValue } from "framer-motion";
+import { animate, motion, type PanInfo, useMotionValue } from "framer-motion";
 import {
   AlertCircle,
   AlertTriangle,
@@ -9,148 +9,229 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import type { ToastType } from "../../hooks/useToasts";
-import type { ToastTheme } from "../../lib/toastTheme";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import type {
+  ToastDismissReason,
+  ToastItem,
+  ToastType,
+} from "../../hooks/useToasts";
 import { resolveToastVisuals } from "./toastVisuals";
 
-interface ToastProps {
-  id: string;
-  type: ToastType;
-  title: string;
-  description?: string;
-  showDescription?: boolean;
-  showAction?: boolean;
-  actionText?: string;
-  customColor?: string;
-  hasBorder?: boolean;
-  bounce?: number;
-  theme?: ToastTheme;
-  duration?: number;
-  onClose: (id: string) => void;
-  showProgress?: boolean;
-  closeOnEscape?: boolean;
-  showTimestamp?: boolean;
-  showCloseButton?: boolean;
-  variant?: "standard" | "expanded";
-  position?:
-    | "top-left"
-    | "top-right"
-    | "bottom-left"
-    | "bottom-center"
-    | "bottom-right";
-  squishDelay?: number;
-  springBounceToggle?: boolean;
-  stiffness?: number;
-  damping?: number;
-  mass?: number;
-  preset?: "smooth" | "bouncy" | "subtle" | "snappy";
-  errorShake?: boolean;
+interface ToastProps extends ToastItem {
+  onClose: (id: string, reason?: ToastDismissReason) => void;
 }
 
+type AlignMode = "left" | "right" | "center";
+type ToastVisualState =
+  | "entering"
+  | "expanded"
+  | "hover-expanded"
+  | "collapsing"
+  | "collapsed"
+  | "swiping"
+  | "dismissing"
+  | "removed";
+
+const EXPANDED_BODY_WIDTH = 360;
 const STANDARD_TEXT_DELAY_MS = 140;
-const LOADING_EXPANDED_DELAY_MS = 650;
+const LOADING_EXPANDED_DELAY_MS = 580;
+
+function cx(...parts: Array<string | undefined | false>) {
+  return parts.filter(Boolean).join(" ");
+}
 
 function morphPathCenterRaw(
-  pw: number,
-  bw: number,
-  th: number,
-  t: number,
-  align: "left" | "right" | "center" = "right",
+  pillWidth: number,
+  bodyWidth: number,
+  totalHeight: number,
+  progress: number,
+  align: AlignMode,
 ) {
-  const PH = 36;
-  const pr = PH / 2; // 18
-  const pillW = Math.min(pw, bw);
-
-  // Determine pill offset based on alignment mode
+  const pillHeight = 36;
+  const pillRadius = pillHeight / 2;
+  const safePillWidth = Math.min(pillWidth, bodyWidth);
   const pillOffset =
-    align === "left" ? 0 : align === "right" ? bw - pillW : (bw - pillW) / 2;
+    align === "left"
+      ? 0
+      : align === "right"
+        ? bodyWidth - safePillWidth
+        : (bodyWidth - safePillWidth) / 2;
 
-  if (t <= 0 || PH + (th - PH) * t - PH < 8) {
+  if (
+    progress <= 0 ||
+    pillHeight + (totalHeight - pillHeight) * progress - pillHeight < 8
+  ) {
     return [
-      `M ${pillOffset},${pr}`,
-      `A ${pr},${pr} 0 0 1 ${pillOffset + pr},0`,
-      `H ${pillOffset + pillW - pr}`,
-      `A ${pr},${pr} 0 0 1 ${pillOffset + pillW},${pr}`,
-      `A ${pr},${pr} 0 0 1 ${pillOffset + pillW - pr},${PH}`,
-      `H ${pillOffset + pr}`,
-      `A ${pr},${pr} 0 0 1 ${pillOffset},${pr}`,
-      `Z`,
+      `M ${pillOffset},${pillRadius}`,
+      `A ${pillRadius},${pillRadius} 0 0 1 ${pillOffset + pillRadius},0`,
+      `H ${pillOffset + safePillWidth - pillRadius}`,
+      `A ${pillRadius},${pillRadius} 0 0 1 ${pillOffset + safePillWidth},${pillRadius}`,
+      `A ${pillRadius},${pillRadius} 0 0 1 ${pillOffset + safePillWidth - pillRadius},${pillHeight}`,
+      `H ${pillOffset + pillRadius}`,
+      `A ${pillRadius},${pillRadius} 0 0 1 ${pillOffset},${pillRadius}`,
+      "Z",
     ].join(" ");
   }
 
-  const bodyH = PH + (th - PH) * t;
-  const curve = 14 * t;
-  const cr = Math.min(16, (bodyH - PH) * 0.45);
-  const bodyTop = PH - curve;
+  const bodyHeight = pillHeight + (totalHeight - pillHeight) * progress;
+  const curve = 14 * progress;
+  const cornerRadius = Math.min(16, (bodyHeight - pillHeight) * 0.45);
+  const bodyTop = pillHeight - curve;
 
   if (align === "right") {
-    const bodyLeft = (bw - pillW) * (1 - t);
-    const qLeftX = Math.max(bodyLeft + cr, pillOffset - curve);
+    const bodyLeft = (bodyWidth - safePillWidth) * (1 - progress);
+    const quadraticLeftX = Math.max(
+      bodyLeft + cornerRadius,
+      pillOffset - curve,
+    );
     return [
-      `M ${pillOffset},${pr}`,
-      `A ${pr},${pr} 0 0 1 ${pillOffset + pr},0`,
-      `H ${bw - pr}`,
-      `A ${pr},${pr} 0 0 1 ${bw},${pr}`,
-      `L ${bw},${bodyH - cr}`,
-      `A ${cr},${cr} 0 0 1 ${bw - cr},${bodyH}`,
-      `H ${bodyLeft + cr}`,
-      `A ${cr},${cr} 0 0 1 ${bodyLeft},${bodyH - cr}`,
-      `L ${bodyLeft},${bodyTop + curve + cr}`,
-      `A ${cr},${cr} 0 0 1 ${bodyLeft + cr},${bodyTop + curve}`,
-      `H ${qLeftX}`,
+      `M ${pillOffset},${pillRadius}`,
+      `A ${pillRadius},${pillRadius} 0 0 1 ${pillOffset + pillRadius},0`,
+      `H ${bodyWidth - pillRadius}`,
+      `A ${pillRadius},${pillRadius} 0 0 1 ${bodyWidth},${pillRadius}`,
+      `L ${bodyWidth},${bodyHeight - cornerRadius}`,
+      `A ${cornerRadius},${cornerRadius} 0 0 1 ${bodyWidth - cornerRadius},${bodyHeight}`,
+      `H ${bodyLeft + cornerRadius}`,
+      `A ${cornerRadius},${cornerRadius} 0 0 1 ${bodyLeft},${bodyHeight - cornerRadius}`,
+      `L ${bodyLeft},${bodyTop + curve + cornerRadius}`,
+      `A ${cornerRadius},${cornerRadius} 0 0 1 ${bodyLeft + cornerRadius},${bodyTop + curve}`,
+      `H ${quadraticLeftX}`,
       `Q ${pillOffset},${bodyTop + curve} ${pillOffset},${bodyTop}`,
-      `Z`,
+      "Z",
     ].join(" ");
   }
 
   if (align === "left") {
-    const bodyRight = pillW + (bw - pillW) * t;
-    const qRightX = Math.min(bodyRight - cr, pillW + curve);
+    const bodyRight = safePillWidth + (bodyWidth - safePillWidth) * progress;
+    const quadraticRightX = Math.min(
+      bodyRight - cornerRadius,
+      safePillWidth + curve,
+    );
     return [
-      `M 0,${pr}`,
-      `A ${pr},${pr} 0 0 1 ${pr},0`,
-      `H ${pillW - pr}`,
-      `A ${pr},${pr} 0 0 1 ${pillW},${pr}`,
-      `L ${pillW},${bodyTop}`,
-      `Q ${pillW},${bodyTop + curve} ${qRightX},${bodyTop + curve}`,
-      `H ${bodyRight - cr}`,
-      `A ${cr},${cr} 0 0 1 ${bodyRight},${bodyTop + curve + cr}`,
-      `L ${bodyRight},${bodyH - cr}`,
-      `A ${cr},${cr} 0 0 1 ${bodyRight - cr},${bodyH}`,
-      `H ${cr}`,
-      `A ${cr},${cr} 0 0 1 0,${bodyH - cr}`,
-      `L 0,${pr}`,
-      `Z`,
+      `M 0,${pillRadius}`,
+      `A ${pillRadius},${pillRadius} 0 0 1 ${pillRadius},0`,
+      `H ${safePillWidth - pillRadius}`,
+      `A ${pillRadius},${pillRadius} 0 0 1 ${safePillWidth},${pillRadius}`,
+      `L ${safePillWidth},${bodyTop}`,
+      `Q ${safePillWidth},${bodyTop + curve} ${quadraticRightX},${bodyTop + curve}`,
+      `H ${bodyRight - cornerRadius}`,
+      `A ${cornerRadius},${cornerRadius} 0 0 1 ${bodyRight},${bodyTop + curve + cornerRadius}`,
+      `L ${bodyRight},${bodyHeight - cornerRadius}`,
+      `A ${cornerRadius},${cornerRadius} 0 0 1 ${bodyRight - cornerRadius},${bodyHeight}`,
+      `H ${cornerRadius}`,
+      `A ${cornerRadius},${cornerRadius} 0 0 1 0,${bodyHeight - cornerRadius}`,
+      `L 0,${pillRadius}`,
+      "Z",
     ].join(" ");
   }
 
-  // Symmetrical Center Alignment
-  const bodyCenter = bw / 2;
-  const halfBodyW = pillW / 2 + ((bw - pillW) / 2) * t;
-  const bodyLeft = bodyCenter - halfBodyW;
-  const bodyRight = bodyCenter + halfBodyW;
-  const qLeftX = Math.max(bodyLeft + cr, pillOffset - curve);
-  const qRightX = Math.min(bodyRight - cr, pillOffset + pillW + curve);
+  const bodyCenter = bodyWidth / 2;
+  const halfBodyWidth =
+    safePillWidth / 2 + ((bodyWidth - safePillWidth) / 2) * progress;
+  const bodyLeft = bodyCenter - halfBodyWidth;
+  const bodyRight = bodyCenter + halfBodyWidth;
+  const quadraticLeftX = Math.max(bodyLeft + cornerRadius, pillOffset - curve);
+  const quadraticRightX = Math.min(
+    bodyRight - cornerRadius,
+    pillOffset + safePillWidth + curve,
+  );
+
   return [
-    `M ${pillOffset},${pr}`,
-    `A ${pr},${pr} 0 0 1 ${pillOffset + pr},0`,
-    `H ${pillOffset + pillW - pr}`,
-    `A ${pr},${pr} 0 0 1 ${pillOffset + pillW},${pr}`,
-    `L ${pillOffset + pillW},${bodyTop}`,
-    `Q ${pillOffset + pillW},${bodyTop + curve} ${qRightX},${bodyTop + curve}`,
-    `H ${bodyRight - cr}`,
-    `A ${cr},${cr} 0 0 1 ${bodyRight},${bodyTop + curve + cr}`,
-    `L ${bodyRight},${bodyH - cr}`,
-    `A ${cr},${cr} 0 0 1 ${bodyRight - cr},${bodyH}`,
-    `H ${bodyLeft + cr}`,
-    `A ${cr},${cr} 0 0 1 ${bodyLeft},${bodyH - cr}`,
-    `L ${bodyLeft},${bodyTop + curve + cr}`,
-    `A ${cr},${cr} 0 0 1 ${bodyLeft + cr},${bodyTop + curve}`,
-    `H ${qLeftX}`,
+    `M ${pillOffset},${pillRadius}`,
+    `A ${pillRadius},${pillRadius} 0 0 1 ${pillOffset + pillRadius},0`,
+    `H ${pillOffset + safePillWidth - pillRadius}`,
+    `A ${pillRadius},${pillRadius} 0 0 1 ${pillOffset + safePillWidth},${pillRadius}`,
+    `L ${pillOffset + safePillWidth},${bodyTop}`,
+    `Q ${pillOffset + safePillWidth},${bodyTop + curve} ${quadraticRightX},${bodyTop + curve}`,
+    `H ${bodyRight - cornerRadius}`,
+    `A ${cornerRadius},${cornerRadius} 0 0 1 ${bodyRight},${bodyTop + curve + cornerRadius}`,
+    `L ${bodyRight},${bodyHeight - cornerRadius}`,
+    `A ${cornerRadius},${cornerRadius} 0 0 1 ${bodyRight - cornerRadius},${bodyHeight}`,
+    `H ${bodyLeft + cornerRadius}`,
+    `A ${cornerRadius},${cornerRadius} 0 0 1 ${bodyLeft},${bodyHeight - cornerRadius}`,
+    `L ${bodyLeft},${bodyTop + curve + cornerRadius}`,
+    `A ${cornerRadius},${cornerRadius} 0 0 1 ${bodyLeft + cornerRadius},${bodyTop + curve}`,
+    `H ${quadraticLeftX}`,
     `Q ${pillOffset},${bodyTop + curve} ${pillOffset},${bodyTop}`,
-    `Z`,
+    "Z",
   ].join(" ");
+}
+
+function getAlignMode(
+  position: ToastProps["position"],
+  rtl: boolean,
+): AlignMode {
+  const baseAlign: AlignMode = position?.endsWith("right")
+    ? "right"
+    : position?.endsWith("center")
+      ? "center"
+      : "left";
+
+  if (!rtl) {
+    return baseAlign;
+  }
+
+  if (baseAlign === "left") {
+    return "right";
+  }
+
+  if (baseAlign === "right") {
+    return "left";
+  }
+
+  return "center";
+}
+
+function renderVisualOverlay(
+  visualStyle: ToastProps["visualStyle"],
+  accentColor: string,
+  highlightColor: string,
+  isDarkSurface: boolean,
+) {
+  if (visualStyle === "glassmorphic-aurora") {
+    return (
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-[inherit]"
+        style={{
+          background:
+            "radial-gradient(circle at 15% 20%, rgba(255,255,255,0.7), transparent 32%), radial-gradient(circle at 80% 10%, rgba(56,189,248,0.38), transparent 28%), radial-gradient(circle at 75% 78%, rgba(244,114,182,0.32), transparent 34%)",
+        }}
+        animate={{ rotate: [0, 5, -4, 0], scale: [1, 1.03, 0.99, 1] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+      />
+    );
+  }
+
+  if (visualStyle === "glow-neon") {
+    return (
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-[inherit]"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.08), transparent 28%), linear-gradient(135deg, rgba(15,23,42,0.1), transparent 55%)",
+          boxShadow: `inset 0 0 0 1px ${highlightColor}, inset 0 0 24px ${accentColor}22`,
+        }}
+      />
+    );
+  }
+
+  if (visualStyle === "liquid-cyberpunk") {
+    return (
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-95"
+        style={{
+          background: `linear-gradient(120deg, rgba(255,255,255,${
+            isDarkSurface ? "0.02" : "0.08"
+          }) 0%, transparent 24%), repeating-linear-gradient(135deg, transparent 0 10px, ${highlightColor} 10px 12px)`,
+        }}
+      />
+    );
+  }
+
+  return null;
 }
 
 export default function Toast({
@@ -161,16 +242,23 @@ export default function Toast({
   showDescription = true,
   showAction = false,
   actionText = "Action",
+  actionSuccessText,
   customColor,
+  fillColor,
+  borderColor,
+  borderWidth = 1.5,
   hasBorder = true,
   bounce = 0.4,
   theme = "light",
+  visualStyle = "classic",
+  classNames,
   duration = 5000,
   onClose,
   showProgress = true,
   closeOnEscape = false,
   showTimestamp = false,
   showCloseButton = true,
+  closeButtonPosition = "top-right",
   position = "bottom-right",
   variant = "standard",
   squishDelay = 0,
@@ -180,103 +268,293 @@ export default function Toast({
   mass = 1,
   preset,
   errorShake = true,
+  rtl = false,
+  pauseOnHover = true,
+  swipeToDismiss = true,
 }: ToastProps) {
+  const svgId = useId().replace(/:/g, "");
   const isExpandedVariant = variant === "expanded";
   const hasDescription = Boolean(showDescription && description);
   const hasExpandedBody = hasDescription || showAction || showTimestamp;
+  const align = getAlignMode(position, rtl);
 
-  const align: "left" | "right" | "center" =
-    position === "bottom-center"
-      ? "center"
-      : "left";
-
-  // Resolve spring presets matching 'goey-toast' physics
-  let stiffnessVal = stiffness;
-  let dampingVal = damping;
-  let massVal = mass;
+  let stiffnessValue = stiffness;
+  let dampingValue = damping;
+  let massValue = mass;
 
   if (preset) {
     switch (preset) {
       case "smooth":
-        stiffnessVal = 240;
-        dampingVal = 26;
-        massVal = 1.0;
+        stiffnessValue = 240;
+        dampingValue = 26;
+        massValue = 1;
         break;
       case "bouncy":
-        stiffnessVal = 300;
-        dampingVal = 15;
-        massVal = 1.0;
+        stiffnessValue = 300;
+        dampingValue = 15;
+        massValue = 1;
         break;
       case "subtle":
-        stiffnessVal = 220;
-        dampingVal = 28;
-        massVal = 0.9;
+        stiffnessValue = 220;
+        dampingValue = 28;
+        massValue = 0.9;
         break;
       case "snappy":
-        stiffnessVal = 380;
-        dampingVal = 24;
-        massVal = 0.8;
+        stiffnessValue = 380;
+        dampingValue = 24;
+        massValue = 0.8;
         break;
     }
   }
 
-  const [progress, setProgress] = useState(100);
   const [expandedOpen, setExpandedOpen] = useState(false);
-  const [timestamp] = useState(() => {
-    const now = new Date();
-    return now.toTimeString().split(" ")[0];
+  const [revealDescription, setRevealDescription] = useState(false);
+  const [remainingMs, setRemainingMs] = useState(duration);
+  const [isHovered, setIsHovered] = useState(false);
+  const [visualState, setVisualState] = useState<ToastVisualState>("entering");
+  const [actionCompleted, setActionCompleted] = useState(false);
+  const [timestamp] = useState(() => new Date().toTimeString().split(" ")[0]);
+  const [dims, setDims] = useState({
+    pw: 176,
+    bw: EXPANDED_BODY_WIDTH,
+    th: 116,
   });
 
+  const closeRequestedRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const previousTypeRef = useRef(type);
-
-  const [dims, setDims] = useState({ pw: 160, bw: 340, th: 110 });
   const dimsRef = useRef(dims);
   dimsRef.current = dims;
 
   const morphProgress = useMotionValue(0);
   const [currentPath, setCurrentPath] = useState(() =>
-    morphPathCenterRaw(160, 340, 110, 0, align),
+    morphPathCenterRaw(176, EXPANDED_BODY_WIDTH, 116, 0, align),
   );
-  const [revealDescription, setRevealDescription] = useState(false);
+
+  const progress =
+    duration > 0 ? Math.max(0, (remainingMs / duration) * 100) : 0;
+  const collapseThresholdMs = hasExpandedBody
+    ? Math.min(1600, Math.max(850, duration * 0.3))
+    : 0;
+
+  const requestClose = useCallback(
+    (reason: ToastDismissReason) => {
+      if (closeRequestedRef.current) {
+        return;
+      }
+
+      closeRequestedRef.current = true;
+      setVisualState("dismissing");
+      onClose(id, reason);
+    },
+    [id, onClose],
+  );
+
+  const {
+    cardBg,
+    strokeColor,
+    titleColor,
+    descriptionColor,
+    progressColor,
+    progressTrackColor,
+    closeColor,
+    iconColor,
+    timestampColor,
+    baseTextColor,
+    accentColor,
+    shadow,
+    isDarkSurface,
+    highlightColor,
+  } = resolveToastVisuals({
+    theme,
+    customColor,
+    fillColor,
+    borderColor,
+    type,
+    visualStyle,
+  });
 
   useEffect(() => {
-    if (!isExpandedVariant) return;
-    const path = morphPathCenterRaw(
-      dims.pw,
-      dims.bw,
-      dims.th,
-      morphProgress.get(),
-      align,
-    );
-    setCurrentPath(path);
-  }, [dims, isExpandedVariant, morphProgress, align]);
+    closeRequestedRef.current = false;
+    setRemainingMs(duration);
+    setActionCompleted(false);
+  }, [duration, id]);
 
   useEffect(() => {
-    if (!isExpandedVariant) return;
+    if (!isExpandedVariant) {
+      setExpandedOpen(false);
+      setRevealDescription(Boolean(hasDescription));
+      setVisualState("expanded");
+      previousTypeRef.current = type;
+      return;
+    }
+
+    if (!hasExpandedBody) {
+      setExpandedOpen(false);
+      setRevealDescription(false);
+      setVisualState("collapsed");
+      previousTypeRef.current = type;
+      return;
+    }
+
+    setExpandedOpen(false);
+    setRevealDescription(false);
+    setVisualState("entering");
+
+    const wasLoading = previousTypeRef.current === "loading";
+    previousTypeRef.current = type;
+
+    const expandDelay =
+      type === "loading" ? LOADING_EXPANDED_DELAY_MS : wasLoading ? 180 : 320;
+
+    const expandTimer = window.setTimeout(() => {
+      setExpandedOpen(true);
+      setVisualState("expanded");
+    }, expandDelay);
+
+    const revealTimer = window.setTimeout(() => {
+      if (hasDescription) {
+        setRevealDescription(true);
+      }
+    }, expandDelay + 120);
+
+    return () => {
+      window.clearTimeout(expandTimer);
+      window.clearTimeout(revealTimer);
+    };
+  }, [hasDescription, hasExpandedBody, id, isExpandedVariant, type]);
+
+  useEffect(() => {
+    if (!isExpandedVariant || !hasExpandedBody) {
+      return;
+    }
+
+    if (isHovered) {
+      setExpandedOpen(true);
+      if (hasDescription) {
+        setRevealDescription(true);
+      }
+      setVisualState("hover-expanded");
+      return;
+    }
+
+    if (remainingMs <= collapseThresholdMs) {
+      setVisualState((current) =>
+        current === "collapsed" ? current : "collapsing",
+      );
+      setExpandedOpen(false);
+      const collapseTimer = window.setTimeout(() => {
+        setVisualState("collapsed");
+      }, 180);
+      return () => window.clearTimeout(collapseTimer);
+    }
+
+    if (expandedOpen) {
+      setVisualState("expanded");
+    }
+  }, [
+    collapseThresholdMs,
+    expandedOpen,
+    hasDescription,
+    hasExpandedBody,
+    isExpandedVariant,
+    isHovered,
+    remainingMs,
+  ]);
+
+  useEffect(() => {
+    let frameId = 0;
+    let previousFrame = performance.now();
+
+    const tick = (now: number) => {
+      const delta = now - previousFrame;
+      previousFrame = now;
+
+      if (!(pauseOnHover && isHovered) && !closeRequestedRef.current) {
+        setRemainingMs((current) => {
+          if (current <= 0) {
+            return 0;
+          }
+          return Math.max(0, current - delta);
+        });
+      }
+
+      frameId = window.requestAnimationFrame(tick);
+    };
+
+    frameId = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [isHovered, pauseOnHover]);
+
+  useEffect(() => {
+    if (remainingMs > 0 || closeRequestedRef.current) {
+      return;
+    }
+
+    requestClose("auto");
+  }, [remainingMs, requestClose]);
+
+  useEffect(() => {
+    if (!closeOnEscape) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        requestClose("manual");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [closeOnEscape, requestClose]);
+
+  useEffect(() => {
+    if (!isExpandedVariant) {
+      return;
+    }
 
     const measure = () => {
-      if (titleRef.current && bodyRef.current && containerRef.current) {
-        const pw = Math.max(120, titleRef.current.offsetWidth + 40); // extra padding for premium look
-        const bw = Math.max(340, bodyRef.current.offsetWidth);
-        const th = Math.max(
-          expandedOpen ? 95 : 36,
-          containerRef.current.offsetHeight,
-        );
-        setDims({ pw, bw, th });
+      if (!containerRef.current || !titleRef.current || !bodyRef.current) {
+        return;
       }
+
+      const pillWidth = Math.max(148, titleRef.current.offsetWidth + 48);
+      const bodyWidth = Math.max(
+        EXPANDED_BODY_WIDTH,
+        bodyRef.current.scrollWidth + 26,
+      );
+      const totalHeight = Math.max(
+        expandedOpen ? 104 : 36,
+        containerRef.current.offsetHeight,
+      );
+
+      setDims({
+        pw: pillWidth,
+        bw: bodyWidth,
+        th: totalHeight,
+      });
     };
 
     measure();
     const resizeObserver = new ResizeObserver(measure);
-    if (containerRef.current) resizeObserver.observe(containerRef.current);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+    if (bodyRef.current) {
+      resizeObserver.observe(bodyRef.current);
+    }
+
     return () => resizeObserver.disconnect();
   }, [
+    actionCompleted,
+    actionSuccessText,
+    actionText,
     description,
     expandedOpen,
+    hasExpandedBody,
     isExpandedVariant,
     showAction,
     showTimestamp,
@@ -284,152 +562,83 @@ export default function Toast({
   ]);
 
   useEffect(() => {
-    if (!isExpandedVariant) return;
+    if (!isExpandedVariant) {
+      return;
+    }
 
-    const controls = animate(morphProgress, expandedOpen ? 1 : 0, {
-      type: "spring",
-      stiffness: springBounceToggle ? stiffnessVal : 280,
-      damping: springBounceToggle ? dampingVal : 18,
-      mass: springBounceToggle ? massVal : 0.8,
-      onUpdate: (latest) => {
-        const path = morphPathCenterRaw(
-          dimsRef.current.pw,
-          dimsRef.current.bw,
-          dimsRef.current.th,
-          latest,
-          align,
-        );
-        setCurrentPath(path);
-      },
-    });
-    return () => controls.stop();
-  }, [
-    dampingVal,
-    expandedOpen,
-    isExpandedVariant,
-    massVal,
-    morphProgress,
-    springBounceToggle,
-    stiffnessVal,
-    align,
-  ]);
-
-  useEffect(() => {
-    setProgress(100);
-    const startTime = Date.now();
-    const timer = window.setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
-      setProgress(remaining);
-
-      if (remaining === 0) {
-        window.clearInterval(timer);
-        onClose(id);
-      }
-    }, 50);
-
-    return () => window.clearInterval(timer);
-  }, [duration, id, onClose]);
+    setCurrentPath(
+      morphPathCenterRaw(dims.pw, dims.bw, dims.th, morphProgress.get(), align),
+    );
+  }, [align, dims, isExpandedVariant, morphProgress]);
 
   useEffect(() => {
     if (!isExpandedVariant) {
-      setExpandedOpen(false);
-      setRevealDescription(false);
-      previousTypeRef.current = type;
       return;
     }
 
-    const wasLoading = previousTypeRef.current === "loading";
-    previousTypeRef.current = type;
+    const controls = animate(morphProgress, expandedOpen ? 1 : 0, {
+      type: "spring",
+      stiffness: springBounceToggle ? stiffnessValue : 280,
+      damping: springBounceToggle ? dampingValue : 18,
+      mass: springBounceToggle ? massValue : 0.8,
+      onUpdate: (latest) => {
+        setCurrentPath(
+          morphPathCenterRaw(
+            dimsRef.current.pw,
+            dimsRef.current.bw,
+            dimsRef.current.th,
+            latest,
+            align,
+          ),
+        );
+      },
+    });
 
-    if (!hasExpandedBody) {
-      setExpandedOpen(false);
-      setRevealDescription(false);
-      return;
-    }
-
-    // Always start collapsed & hide description initially for a clean sequential sequence
-    setExpandedOpen(false);
-    setRevealDescription(false);
-
-    let expandTimer: number;
-    let revealTimer: number;
-
-    if (type === "loading") {
-      expandTimer = window.setTimeout(() => {
-        setExpandedOpen(true);
-        revealTimer = window.setTimeout(() => {
-          if (hasDescription) {
-            setRevealDescription(true);
-          }
-        }, 150); // slight offset to allow expansion slide to begin
-      }, LOADING_EXPANDED_DELAY_MS);
-    } else {
-      // Let the title pill show first, then slide/expand the toast background
-      expandTimer = window.setTimeout(
-        () => {
-          setExpandedOpen(true);
-          revealTimer = window.setTimeout(() => {
-            if (hasDescription) {
-              setRevealDescription(true);
-            }
-          }, 120); // starts emerging as the morph expands down
-        },
-        wasLoading ? 180 : 500,
-      ); // 500ms delay gives time for title to mount and settle
-    }
-
-    return () => {
-      window.clearTimeout(expandTimer);
-      window.clearTimeout(revealTimer);
-    };
-  }, [hasDescription, hasExpandedBody, isExpandedVariant, type]);
-
-  useEffect(() => {
-    if (!closeOnEscape) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose(id);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [id, closeOnEscape, onClose]);
+    return () => controls.stop();
+  }, [
+    align,
+    dampingValue,
+    expandedOpen,
+    isExpandedVariant,
+    massValue,
+    morphProgress,
+    springBounceToggle,
+    stiffnessValue,
+  ]);
 
   const entryTransition = springBounceToggle
     ? {
-        type: "spring",
-        stiffness: stiffnessVal,
-        damping: dampingVal,
-        mass: massVal,
+        type: "spring" as const,
+        stiffness: stiffnessValue,
+        damping: dampingValue,
+        mass: massValue,
         delay: squishDelay / 1000,
       }
     : {
-        type: "spring",
+        type: "spring" as const,
         bounce,
         duration: 0.45,
         delay: squishDelay / 1000,
       };
 
   const layoutTransition = {
-    type: "spring",
+    type: "spring" as const,
     stiffness: 280,
-    damping: 18,
+    damping: 22,
     mass: 0.8,
   };
 
   const bodyTransition = {
     type: "spring" as const,
-    stiffness: springBounceToggle ? stiffnessVal : 280,
-    damping: springBounceToggle ? dampingVal : 18,
-    mass: springBounceToggle ? massVal : 0.8,
+    stiffness: springBounceToggle ? stiffnessValue : 280,
+    damping: springBounceToggle ? dampingValue : 18,
+    mass: springBounceToggle ? massValue : 0.8,
   };
 
   const standardEntryInitial = {
     opacity: 0,
     y: 24,
     scale: 0.96,
-    x: 0,
   };
 
   const standardEntryAnimate = {
@@ -454,7 +663,6 @@ export default function Toast({
     opacity: 0,
     y: 32,
     scale: 0.92,
-    x: 0,
     width: dims.pw,
   };
 
@@ -478,24 +686,6 @@ export default function Toast({
     },
   };
 
-  const {
-    cardBg,
-    strokeColor,
-    titleColor,
-    descriptionColor,
-    progressColor,
-    progressTrackColor,
-    closeColor,
-    iconColor,
-    timestampColor,
-    baseTextColor,
-    shadow,
-  } = resolveToastVisuals({
-    theme,
-    customColor,
-    type,
-  });
-
   const renderIcon = (sizeClass: string) => {
     const iconStyle = { color: iconColor };
     switch (type) {
@@ -509,33 +699,72 @@ export default function Toast({
         return <Info className={sizeClass} style={iconStyle} />;
       case "loading":
         return (
-          <Loader2 className={`${sizeClass} animate-spin`} style={iconStyle} />
+          <Loader2
+            className={cx(sizeClass, "animate-spin")}
+            style={iconStyle}
+          />
         );
       case "promise":
         return (
           <Sparkles
-            className={`${sizeClass} animate-pulse`}
+            className={cx(sizeClass, "animate-pulse")}
             style={iconStyle}
           />
         );
       case "default":
       default:
-        if (isExpandedVariant) {
-          return <Bell className={sizeClass} style={iconStyle} />;
-        }
-        return null;
+        return isExpandedVariant ? (
+          <Bell className={sizeClass} style={iconStyle} />
+        ) : null;
     }
   };
 
+  const handleAction = () => {
+    if (actionSuccessText) {
+      setActionCompleted(true);
+      window.setTimeout(() => requestClose("action"), 520);
+      return;
+    }
+
+    requestClose("action");
+  };
+
+  const onDragEnd = (
+    _event: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo,
+  ) => {
+    if (Math.abs(info.offset.x) > 120) {
+      requestClose("swipe");
+      return;
+    }
+
+    setVisualState(
+      expandedOpen ? (isHovered ? "hover-expanded" : "expanded") : "collapsed",
+    );
+  };
+
   const titleAnimationDelay = (squishDelay + 50) / 1000;
-  const descriptionAnimationDelay = (squishDelay + 140) / 1000;
+  const descriptionAnimationDelay =
+    (squishDelay + STANDARD_TEXT_DELAY_MS) / 1000;
   const contentKey = `${type}-${title}-${description ?? ""}-${showAction ? actionText : ""}`;
+  const closeButtonClass =
+    closeButtonPosition === "top-left" ? "left-3.5" : "right-3.5";
+  const standardTextAlign = rtl ? "text-right" : "text-left";
+  const actionLabel =
+    actionCompleted && actionSuccessText ? actionSuccessText : actionText;
+  const borderSize = hasBorder ? borderWidth : 0;
 
   if (isExpandedVariant) {
     return (
       <motion.div
         ref={containerRef}
         layout
+        drag={swipeToDismiss ? "x" : false}
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.22}
+        dragMomentum={false}
+        onDragStart={() => setVisualState("swiping")}
+        onDragEnd={onDragEnd}
         initial={expandedEntryInitial}
         animate={expandedEntryAnimate}
         exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
@@ -543,64 +772,99 @@ export default function Toast({
           default: entryTransition,
           layout: layoutTransition,
         }}
-        className="relative flex flex-col items-center pointer-events-auto group max-w-[420px]"
+        onHoverStart={() => setIsHovered(true)}
+        onHoverEnd={() => setIsHovered(false)}
+        className={cx(
+          "relative flex flex-col items-center pointer-events-auto select-none",
+          classNames?.root,
+        )}
+        dir={rtl ? "rtl" : "ltr"}
+        style={{
+          maxWidth: 440,
+          filter:
+            visualStyle === "glow-neon"
+              ? `drop-shadow(0 0 28px ${highlightColor})`
+              : undefined,
+        }}
       >
-        {/* Crisp, Sharp Organic Morphing Bezier SVG Background */}
-        <svg
-          className="absolute inset-0 w-full h-full pointer-events-none select-none z-0 overflow-visible"
-          style={{
-            filter:
-              "drop-shadow(0 8px 30px rgba(0,0,0,0.16)) drop-shadow(0 2px 8px rgba(0,0,0,0.08))",
-          }}
-        >
+        <svg className="absolute inset-0 h-full w-full overflow-visible pointer-events-none select-none z-0">
+          <defs>
+            <linearGradient
+              id={`${svgId}-cyber`}
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="100%"
+            >
+              <stop
+                offset="0%"
+                stopColor={isDarkSurface ? "#090914" : cardBg}
+              />
+              <stop offset="70%" stopColor={cardBg} />
+              <stop offset="100%" stopColor={highlightColor} />
+            </linearGradient>
+          </defs>
           <path
             d={currentPath}
-            fill={cardBg}
+            fill={
+              visualStyle === "liquid-cyberpunk"
+                ? `url(#${svgId}-cyber)`
+                : cardBg
+            }
             stroke={strokeColor}
-            strokeWidth={hasBorder ? 1.5 : 0}
+            strokeWidth={borderSize}
           />
+          {visualStyle === "glow-neon" ? (
+            <path
+              d={currentPath}
+              fill="transparent"
+              stroke={highlightColor}
+              strokeWidth={0.75}
+              opacity={0.65}
+            />
+          ) : null}
         </svg>
 
-        <div className="relative z-10 w-full flex flex-col items-center select-none">
+        <div className="relative z-10 w-full flex flex-col items-center">
           <motion.div
             key={`header-${contentKey}`}
-            ref={headerRef}
-            initial={{
-              opacity: 0,
-              y: -4,
-              width: dims.pw,
-              ...(align === "left"
-                ? { left: 0 }
-                : { left: "50%", x: "-50%" }),
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              width: dims.pw,
-              ...(align === "left"
-                ? { left: 0 }
-                : { left: "50%", x: "-50%" }),
-            }}
+            initial={{ opacity: 0, y: -4, width: dims.pw }}
+            animate={{ opacity: 1, y: 0, width: dims.pw }}
             transition={{
               width: bodyTransition,
-              left: bodyTransition,
-              right: bodyTransition,
-              x: bodyTransition,
               default: { duration: 0.28, delay: titleAnimationDelay },
             }}
-            className="absolute top-0 h-9 flex items-center justify-center overflow-hidden z-20"
+            className={cx(
+              "absolute top-0 h-9 flex items-center overflow-hidden z-20",
+              align === "center"
+                ? "justify-center"
+                : align === "right"
+                  ? "justify-end"
+                  : "justify-start",
+            )}
+            style={{
+              left: align === "right" ? "auto" : 0,
+              right: align === "right" ? 0 : "auto",
+            }}
           >
             <div
               ref={titleRef}
-              className={`flex items-center gap-1.5 whitespace-nowrap h-full w-full ${
+              className={cx(
+                "flex items-center gap-1.5 whitespace-nowrap h-full w-full",
                 align === "center"
                   ? "justify-center px-4"
-                  : "justify-start px-5"
-              }`}
+                  : align === "right"
+                    ? "justify-end px-5"
+                    : "justify-start px-5",
+                classNames?.content,
+              )}
             >
-              {renderIcon("w-4 h-4")}
+              {renderIcon("h-4 w-4")}
               <span
-                className="text-[11px] font-extrabold tracking-wide uppercase"
+                className={cx(
+                  "text-[11px] font-extrabold tracking-[0.22em] uppercase",
+                  classNames?.title,
+                )}
                 style={{ color: titleColor }}
               >
                 {title}
@@ -614,79 +878,116 @@ export default function Toast({
             animate={{
               height: expandedOpen ? "auto" : 0,
               opacity: expandedOpen ? 1 : 0,
-              scale: expandedOpen ? 1 : 0.92,
+              scale: expandedOpen ? 1 : 0.94,
             }}
             transition={bodyTransition}
             className="w-full overflow-hidden mt-9"
           >
-            <div className="w-[340px] max-w-full pt-1 pb-4 px-5 flex items-center justify-between gap-4 mt-2">
+            <div
+              className={cx(
+                "max-w-full pt-1 pb-4 px-5 mt-2 flex items-start gap-4",
+                rtl ? "flex-row-reverse text-right" : "text-left",
+                classNames?.body,
+              )}
+              style={{ width: dims.bw }}
+            >
               <div className="flex-1 min-w-0">
-                {hasDescription && revealDescription && (
+                {hasDescription && revealDescription ? (
                   <motion.p
                     key={`expanded-description-${contentKey}`}
-                    initial={{ opacity: 0, y: -16 }} // slide down from the toast title
+                    initial={{ opacity: 0, y: -14 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 160,
-                      damping: 14,
-                    }}
-                    className="text-xs font-semibold leading-relaxed"
+                    transition={{ type: "spring", stiffness: 160, damping: 14 }}
+                    className={cx(
+                      "text-xs font-semibold leading-relaxed",
+                      classNames?.description,
+                    )}
                     style={{ color: descriptionColor }}
                   >
                     {description}
                   </motion.p>
-                )}
-                {showAction && actionText && (
-                  <div className="mt-2">
-                    <button
+                ) : null}
+
+                {showAction && actionLabel ? (
+                  <div className="mt-3">
+                    <motion.button
                       type="button"
-                      onClick={() => onClose(id)}
-                      className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider bg-accent text-white hover:opacity-90 transition-opacity"
+                      whileTap={{ scale: 0.97 }}
+                      onClick={handleAction}
+                      className={cx(
+                        "px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all",
+                        classNames?.action,
+                      )}
+                      style={{
+                        background: accentColor,
+                        color: isDarkSurface ? "#07131E" : "#FFFFFF",
+                        boxShadow: `0 10px 24px ${highlightColor}`,
+                      }}
                     >
-                      {actionText}
-                    </button>
+                      <motion.span
+                        key={actionLabel}
+                        initial={{ opacity: 0.7, scale: 0.94 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 240,
+                          damping: 18,
+                        }}
+                      >
+                        {actionLabel}
+                      </motion.span>
+                    </motion.button>
                   </div>
-                )}
+                ) : null}
               </div>
 
-              {showTimestamp && (
+              {showTimestamp ? (
                 <span
                   className="text-[10px] font-bold font-mono flex-shrink-0"
                   style={{ color: timestampColor }}
                 >
                   {timestamp}
                 </span>
-              )}
+              ) : null}
             </div>
           </motion.div>
         </div>
 
-        {showProgress && expandedOpen && (
+        {showProgress && remainingMs > 0 ? (
           <div
-            className="absolute bottom-0 left-4 right-4 h-1 rounded-full overflow-hidden z-20"
+            className={cx(
+              "absolute bottom-0 left-4 right-4 h-1 rounded-full overflow-hidden z-20",
+              classNames?.progressTrack,
+            )}
             style={{ backgroundColor: progressTrackColor }}
           >
             <motion.div
-              className="h-full"
+              className={cx("h-full", classNames?.progressIndicator)}
               style={{ backgroundColor: progressColor }}
               initial={{ width: "100%" }}
               animate={{ width: `${progress}%` }}
               transition={{ ease: "linear" }}
             />
           </div>
-        )}
+        ) : null}
 
-        {showCloseButton && expandedOpen && (
+        {showCloseButton ? (
           <button
             type="button"
-            onClick={() => onClose(id)}
-            className="absolute top-[32px] right-3.5 p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:opacity-100 transition-all duration-200 z-30"
+            onClick={() => requestClose("manual")}
+            className={cx(
+              "absolute top-[32px] p-1 rounded-lg transition-all duration-200 z-30",
+              closeButtonClass,
+              isHovered || visualState === "hover-expanded"
+                ? "opacity-100"
+                : "opacity-0",
+              classNames?.closeButton,
+            )}
             style={{ color: closeColor }}
           >
             <X className="w-3.5 h-3.5" />
           </button>
-        )}
+        ) : null}
       </motion.div>
     );
   }
@@ -694,6 +995,12 @@ export default function Toast({
   return (
     <motion.div
       layout
+      drag={swipeToDismiss ? "x" : false}
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.24}
+      dragMomentum={false}
+      onDragStart={() => setVisualState("swiping")}
+      onDragEnd={onDragEnd}
       initial={standardEntryInitial}
       animate={standardEntryAnimate}
       exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
@@ -701,93 +1008,157 @@ export default function Toast({
         default: entryTransition,
         layout: layoutTransition,
       }}
-      className={`toast group ${hasBorder ? "" : "!border-transparent"}`}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      className={cx(
+        "group relative overflow-hidden rounded-[28px] pointer-events-auto max-w-[420px] min-w-[320px]",
+        classNames?.root,
+      )}
+      dir={rtl ? "rtl" : "ltr"}
       style={{
-        backgroundColor: cardBg,
-        borderColor: strokeColor,
+        background: cardBg,
+        border: `${borderSize}px solid ${strokeColor}`,
         color: baseTextColor,
         boxShadow: shadow,
+        backdropFilter:
+          visualStyle === "glassmorphic-aurora"
+            ? "blur(24px) saturate(185%)"
+            : undefined,
+        WebkitBackdropFilter:
+          visualStyle === "glassmorphic-aurora"
+            ? "blur(24px) saturate(185%)"
+            : undefined,
       }}
     >
-      <div className="flex gap-3 w-full items-start">
-        {renderIcon("w-5 h-5") && (
-          <div className="mt-0.5 flex-shrink-0">{renderIcon("w-5 h-5")}</div>
-        )}
+      {renderVisualOverlay(
+        visualStyle,
+        accentColor,
+        highlightColor,
+        isDarkSurface,
+      )}
 
-        <div className="flex-1 min-w-0">
+      <div
+        className={cx(
+          "relative z-10 flex gap-3 items-start px-5 py-4",
+          rtl ? "flex-row-reverse text-right" : "text-left",
+        )}
+      >
+        {renderIcon("w-5 h-5") ? (
+          <div className={cx("mt-0.5 flex-shrink-0", classNames?.icon)}>
+            {renderIcon("w-5 h-5")}
+          </div>
+        ) : null}
+
+        <div className={cx("flex-1 min-w-0 pr-8", classNames?.content)}>
           <motion.div
             key={`title-${contentKey}`}
             initial={{ opacity: 0, y: 3 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.28, delay: titleAnimationDelay }}
-            className="flex items-center gap-1.5 flex-wrap"
+            className={cx(
+              "flex items-center gap-1.5 flex-wrap",
+              standardTextAlign,
+            )}
           >
-            {showTimestamp && (
+            {showTimestamp ? (
               <span
                 className="text-[10px] font-bold font-mono"
                 style={{ color: timestampColor }}
               >
                 [{timestamp}]
               </span>
-            )}
+            ) : null}
             <h4
-              className="text-sm font-semibold truncate"
+              className={cx(
+                "text-sm font-semibold truncate",
+                classNames?.title,
+              )}
               style={{ color: titleColor }}
             >
               {title}
             </h4>
           </motion.div>
-          {hasDescription && (
+
+          {hasDescription ? (
             <motion.p
               key={`description-${contentKey}`}
               initial={{ opacity: 0, y: 3 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.28, delay: descriptionAnimationDelay }}
-              className="mt-1 text-xs leading-relaxed line-clamp-2"
+              className={cx(
+                "mt-1 text-xs leading-relaxed line-clamp-2",
+                standardTextAlign,
+                classNames?.description,
+              )}
               style={{ color: descriptionColor }}
             >
               {description}
             </motion.p>
-          )}
-          {showAction && actionText && (
-            <div className="mt-2">
-              <button
-                type="button"
-                onClick={() => onClose(id)}
-                className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-accent text-white hover:opacity-90 transition-opacity"
-              >
-                {actionText}
-              </button>
-            </div>
-          )}
-        </div>
+          ) : null}
 
-        {showCloseButton && (
-          <button
-            type="button"
-            onClick={() => onClose(id)}
-            className="p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:opacity-100 transition-all duration-200"
-            style={{ color: closeColor }}
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
+          {showAction && actionLabel ? (
+            <div className="mt-3">
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.97 }}
+                onClick={handleAction}
+                className={cx(
+                  "px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all",
+                  classNames?.action,
+                )}
+                style={{
+                  background: accentColor,
+                  color: isDarkSurface ? "#07131E" : "#FFFFFF",
+                  boxShadow: `0 10px 24px ${highlightColor}`,
+                }}
+              >
+                <motion.span
+                  key={actionLabel}
+                  initial={{ opacity: 0.7, scale: 0.94 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 240, damping: 18 }}
+                >
+                  {actionLabel}
+                </motion.span>
+              </motion.button>
+            </div>
+          ) : null}
+        </div>
       </div>
 
-      {showProgress && (
+      {showCloseButton ? (
+        <button
+          type="button"
+          onClick={() => requestClose("manual")}
+          className={cx(
+            "absolute top-3.5 p-1 rounded-lg transition-all duration-200 z-20",
+            closeButtonClass,
+            isHovered ? "opacity-100" : "opacity-0",
+            classNames?.closeButton,
+          )}
+          style={{ color: closeColor }}
+        >
+          <X className="w-4 h-4" />
+        </button>
+      ) : null}
+
+      {showProgress && remainingMs > 0 ? (
         <div
-          className="absolute bottom-0 left-0 right-0 h-1"
+          className={cx(
+            "absolute bottom-0 left-0 right-0 h-1",
+            classNames?.progressTrack,
+          )}
           style={{ backgroundColor: progressTrackColor }}
         >
           <motion.div
-            className="h-full"
+            className={cx("h-full", classNames?.progressIndicator)}
             style={{ backgroundColor: progressColor }}
             initial={{ width: "100%" }}
             animate={{ width: `${progress}%` }}
             transition={{ ease: "linear" }}
           />
         </div>
-      )}
+      ) : null}
     </motion.div>
   );
 }
