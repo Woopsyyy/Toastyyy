@@ -44,8 +44,8 @@ export interface ToastItem {
   stiffness?: number;
   damping?: number;
   mass?: number;
+  preset?: "smooth" | "bouncy" | "subtle" | "snappy";
   errorShake?: boolean;
-  titleDescriptionSimultaneous?: boolean;
 }
 
 interface ToastContextType {
@@ -58,6 +58,65 @@ interface ToastContextType {
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
+
+type Listener = (action: {
+  type: "add" | "update" | "dismiss";
+  id?: string;
+  toast?: Omit<ToastItem, "id"> | Partial<ToastItem>;
+}) => void;
+const listeners = new Set<Listener>();
+
+export const toast = {
+  success: (
+    title: string,
+    options: Omit<ToastItem, "id" | "title" | "type"> = {},
+  ) => toast.custom("success", title, options),
+  error: (
+    title: string,
+    options: Omit<ToastItem, "id" | "title" | "type"> = {},
+  ) => toast.custom("error", title, options),
+  warning: (
+    title: string,
+    options: Omit<ToastItem, "id" | "title" | "type"> = {},
+  ) => toast.custom("warning", title, options),
+  info: (
+    title: string,
+    options: Omit<ToastItem, "id" | "title" | "type"> = {},
+  ) => toast.custom("info", title, options),
+  loading: (
+    title: string,
+    options: Omit<ToastItem, "id" | "title" | "type"> = {},
+  ) => toast.custom("loading", title, options),
+  promise: (
+    title: string,
+    options: Omit<ToastItem, "id" | "title" | "type"> = {},
+  ) => toast.custom("promise", title, options),
+
+  custom: (
+    type: ToastType,
+    title: string,
+    options: Omit<ToastItem, "id" | "title" | "type"> = {},
+  ) => {
+    const id =
+      (options as any).id || Math.random().toString(36).substring(2, 9);
+    listeners.forEach((l) =>
+      l({
+        type: "add",
+        id,
+        toast: { ...options, type, title, id } as any,
+      }),
+    );
+    return id;
+  },
+
+  update: (id: string, updatedFields: Partial<ToastItem>) => {
+    listeners.forEach((l) => l({ type: "update", id, toast: updatedFields }));
+  },
+
+  dismiss: (id?: string) => {
+    listeners.forEach((l) => l({ type: "dismiss", id }));
+  },
+};
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -80,6 +139,33 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  React.useEffect(() => {
+    const handleAction = (action: {
+      type: "add" | "update" | "dismiss";
+      id?: string;
+      toast?: Omit<ToastItem, "id"> | Partial<ToastItem>;
+    }) => {
+      if (action.type === "add" && action.toast) {
+        const newToast = { ...(action.toast as ToastItem), id: action.id! };
+        setToasts((prev) => [...prev, newToast]);
+      } else if (action.type === "update" && action.toast) {
+        setToasts((prev) =>
+          prev.map((t) => (t.id === action.id ? { ...t, ...action.toast } : t)),
+        );
+      } else if (action.type === "dismiss") {
+        if (action.id) {
+          setToasts((prev) => prev.filter((t) => t.id !== action.id));
+        } else {
+          setToasts([]);
+        }
+      }
+    };
+    listeners.add(handleAction);
+    return () => {
+      listeners.delete(handleAction);
+    };
   }, []);
 
   return (

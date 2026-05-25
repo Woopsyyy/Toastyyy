@@ -40,7 +40,7 @@ type ToastPosition =
   | "bottom-right";
 
 export default function PlaygroundPage() {
-  const { addToast, expanded, setExpanded } = useToasts();
+  const { addToast } = useToasts();
   const location = useLocation();
 
   const [showCode, setShowCode] = useState(true);
@@ -69,7 +69,6 @@ export default function PlaygroundPage() {
     damping: 20,
     mass: 1.0,
     errorShake: true,
-    titleDescriptionSimultaneous: false,
   });
 
   // Hydrate preset from route state when coming from examples configure click
@@ -99,8 +98,6 @@ export default function PlaygroundPage() {
         damping: preset.damping ?? 20,
         mass: preset.mass ?? 1.0,
         errorShake: preset.errorShake ?? true,
-        titleDescriptionSimultaneous:
-          preset.titleDescriptionSimultaneous ?? false,
       });
 
       // Notify user of loaded recipe
@@ -137,7 +134,6 @@ export default function PlaygroundPage() {
       damping: config.damping,
       mass: config.mass,
       errorShake: config.errorShake,
-      titleDescriptionSimultaneous: config.titleDescriptionSimultaneous,
     });
   };
 
@@ -177,8 +173,7 @@ toast.${config.type}('${config.title}', {
   stiffness: ${config.stiffness},
   damping: ${config.damping},
   mass: ${config.mass},
-  errorShake: ${config.errorShake},
-  titleDescriptionSimultaneous: ${config.titleDescriptionSimultaneous}
+  errorShake: ${config.errorShake}
 })`;
 
   const handleCopy = () => {
@@ -432,7 +427,13 @@ toast.${config.type}('${config.title}', {
                     <button
                       key={t}
                       onClick={() =>
-                        setConfig((prev) => ({ ...prev, theme: t }))
+                        setConfig((prev) => ({
+                          ...prev,
+                          theme: t,
+                          // light theme always uses white as the surface
+                          customColor:
+                            t === "light" ? "#ffffff" : prev.customColor,
+                        }))
                       }
                       className={`px-3 py-1 rounded-md text-[10px] font-black capitalize transition-all ${
                         config.theme === t
@@ -714,60 +715,6 @@ toast.${config.type}('${config.title}', {
                   />
                 </button>
               </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-border-strong/40">
-                <span className="text-xs font-bold text-text-2">
-                  Simultaneous Text Entry
-                </span>
-                <button
-                  onClick={() =>
-                    setConfig((prev) => ({
-                      ...prev,
-                      titleDescriptionSimultaneous:
-                        !prev.titleDescriptionSimultaneous,
-                    }))
-                  }
-                  className={`w-9 h-5 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${config.titleDescriptionSimultaneous ? "bg-accent" : "bg-gray-200"}`}
-                >
-                  <div
-                    className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${config.titleDescriptionSimultaneous ? "translate-x-4" : "translate-x-0"}`}
-                  />
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-border-strong/40">
-                <span className="text-xs font-bold text-text-2">
-                  Toastyyy Expanded Style
-                </span>
-                <button
-                  onClick={() =>
-                    setConfig((prev) => ({
-                      ...prev,
-                      variant:
-                        prev.variant === "expanded" ? "standard" : "expanded",
-                    }))
-                  }
-                  className={`w-9 h-5 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${config.variant === "expanded" ? "bg-accent" : "bg-gray-200"}`}
-                >
-                  <div
-                    className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${config.variant === "expanded" ? "translate-x-4" : "translate-x-0"}`}
-                  />
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-border-strong/40">
-                <span className="text-xs font-bold text-text-2">
-                  Expanded Stack (Don't Collapse)
-                </span>
-                <button
-                  onClick={() => setExpanded(!expanded)}
-                  className={`w-9 h-5 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${expanded ? "bg-accent" : "bg-gray-200"}`}
-                >
-                  <div
-                    className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${expanded ? "translate-x-4" : "translate-x-0"}`}
-                  />
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -862,7 +809,6 @@ toast.${config.type}('${config.title}', {
                     damping: 20,
                     mass: 1.0,
                     errorShake: true,
-                    titleDescriptionSimultaneous: false,
                   })
                 }
                 className="flex items-center justify-center gap-1.5 text-[9px] font-extrabold text-text-3 hover:text-accent-2 transition-colors uppercase tracking-widest py-1"

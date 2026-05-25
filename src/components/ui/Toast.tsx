@@ -1,24 +1,18 @@
-import { motion, useMotionValue, animate } from "framer-motion";
+import { animate, motion, useMotionValue } from "framer-motion";
 import {
-  CheckCircle2,
   AlertCircle,
-  Info,
   AlertTriangle,
-  X,
+  Bell,
+  CheckCircle2,
+  Info,
   Loader2,
   Sparkles,
-  Bell,
+  X,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
-
-export type ToastType =
-  | "default"
-  | "success"
-  | "error"
-  | "warning"
-  | "info"
-  | "loading"
-  | "promise";
+import { useEffect, useRef, useState } from "react";
+import type { ToastType } from "../../hooks/useToasts";
+import type { ToastTheme } from "../../lib/toastTheme";
+import { resolveToastVisuals } from "./toastVisuals";
 
 interface ToastProps {
   id: string;
@@ -31,7 +25,7 @@ interface ToastProps {
   customColor?: string;
   hasBorder?: boolean;
   bounce?: number;
-  theme?: "light" | "dark" | "custom";
+  theme?: ToastTheme;
   duration?: number;
   onClose: (id: string) => void;
   showProgress?: boolean;
@@ -39,30 +33,39 @@ interface ToastProps {
   showTimestamp?: boolean;
   showCloseButton?: boolean;
   variant?: "standard" | "expanded";
+  position?:
+    | "top-left"
+    | "top-right"
+    | "bottom-left"
+    | "bottom-center"
+    | "bottom-right";
   squishDelay?: number;
   springBounceToggle?: boolean;
   stiffness?: number;
   damping?: number;
   mass?: number;
+  preset?: "smooth" | "bouncy" | "subtle" | "snappy";
   errorShake?: boolean;
-  titleDescriptionSimultaneous?: boolean;
 }
 
-const icons = {
-  default: null,
-  success: <CheckCircle2 className="w-5 h-5 text-success" />,
-  error: <AlertCircle className="w-5 h-5 text-error" />,
-  warning: <AlertTriangle className="w-5 h-5 text-warning" />,
-  info: <Info className="w-5 h-5 text-info" />,
-  loading: <Loader2 className="w-5 h-5 text-accent animate-spin" />,
-  promise: <Sparkles className="w-5 h-5 text-purple-500 animate-pulse" />,
-};
+const STANDARD_TEXT_DELAY_MS = 140;
+const LOADING_EXPANDED_DELAY_MS = 650;
 
-function morphPathCenterRaw(pw: number, bw: number, th: number, t: number) {
+function morphPathCenterRaw(
+  pw: number,
+  bw: number,
+  th: number,
+  t: number,
+  align: "left" | "right" | "center" = "right",
+) {
   const PH = 36;
   const pr = PH / 2; // 18
   const pillW = Math.min(pw, bw);
-  const pillOffset = (bw - pillW) / 2;
+
+  // Determine pill offset based on alignment mode
+  const pillOffset =
+    align === "left" ? 0 : align === "right" ? bw - pillW : (bw - pillW) / 2;
+
   if (t <= 0 || PH + (th - PH) * t - PH < 8) {
     return [
       `M ${pillOffset},${pr}`,
@@ -75,10 +78,54 @@ function morphPathCenterRaw(pw: number, bw: number, th: number, t: number) {
       `Z`,
     ].join(" ");
   }
+
   const bodyH = PH + (th - PH) * t;
   const curve = 14 * t;
   const cr = Math.min(16, (bodyH - PH) * 0.45);
   const bodyTop = PH - curve;
+
+  if (align === "right") {
+    const bodyLeft = (bw - pillW) * (1 - t);
+    const qLeftX = Math.max(bodyLeft + cr, pillOffset - curve);
+    return [
+      `M ${pillOffset},${pr}`,
+      `A ${pr},${pr} 0 0 1 ${pillOffset + pr},0`,
+      `H ${bw - pr}`,
+      `A ${pr},${pr} 0 0 1 ${bw},${pr}`,
+      `L ${bw},${bodyH - cr}`,
+      `A ${cr},${cr} 0 0 1 ${bw - cr},${bodyH}`,
+      `H ${bodyLeft + cr}`,
+      `A ${cr},${cr} 0 0 1 ${bodyLeft},${bodyH - cr}`,
+      `L ${bodyLeft},${bodyTop + curve + cr}`,
+      `A ${cr},${cr} 0 0 1 ${bodyLeft + cr},${bodyTop + curve}`,
+      `H ${qLeftX}`,
+      `Q ${pillOffset},${bodyTop + curve} ${pillOffset},${bodyTop}`,
+      `Z`,
+    ].join(" ");
+  }
+
+  if (align === "left") {
+    const bodyRight = pillW + (bw - pillW) * t;
+    const qRightX = Math.min(bodyRight - cr, pillW + curve);
+    return [
+      `M 0,${pr}`,
+      `A ${pr},${pr} 0 0 1 ${pr},0`,
+      `H ${pillW - pr}`,
+      `A ${pr},${pr} 0 0 1 ${pillW},${pr}`,
+      `L ${pillW},${bodyTop}`,
+      `Q ${pillW},${bodyTop + curve} ${qRightX},${bodyTop + curve}`,
+      `H ${bodyRight - cr}`,
+      `A ${cr},${cr} 0 0 1 ${bodyRight},${bodyTop + curve + cr}`,
+      `L ${bodyRight},${bodyH - cr}`,
+      `A ${cr},${cr} 0 0 1 ${bodyRight - cr},${bodyH}`,
+      `H ${cr}`,
+      `A ${cr},${cr} 0 0 1 0,${bodyH - cr}`,
+      `L 0,${pr}`,
+      `Z`,
+    ].join(" ");
+  }
+
+  // Symmetrical Center Alignment
   const bodyCenter = bw / 2;
   const halfBodyW = pillW / 2 + ((bw - pillW) / 2) * t;
   const bodyLeft = bodyCenter - halfBodyW;
@@ -124,18 +171,57 @@ export default function Toast({
   closeOnEscape = false,
   showTimestamp = false,
   showCloseButton = true,
+  position = "bottom-right",
   variant = "standard",
   squishDelay = 0,
   springBounceToggle = true,
   stiffness = 260,
   damping = 20,
   mass = 1,
+  preset,
   errorShake = true,
-  titleDescriptionSimultaneous = false,
 }: ToastProps) {
+  const isExpandedVariant = variant === "expanded";
+  const hasDescription = Boolean(showDescription && description);
+  const hasExpandedBody = hasDescription || showAction || showTimestamp;
+
+  const align: "left" | "right" | "center" =
+    position === "bottom-center"
+      ? "center"
+      : "left";
+
+  // Resolve spring presets matching 'goey-toast' physics
+  let stiffnessVal = stiffness;
+  let dampingVal = damping;
+  let massVal = mass;
+
+  if (preset) {
+    switch (preset) {
+      case "smooth":
+        stiffnessVal = 240;
+        dampingVal = 26;
+        massVal = 1.0;
+        break;
+      case "bouncy":
+        stiffnessVal = 300;
+        dampingVal = 15;
+        massVal = 1.0;
+        break;
+      case "subtle":
+        stiffnessVal = 220;
+        dampingVal = 28;
+        massVal = 0.9;
+        break;
+      case "snappy":
+        stiffnessVal = 380;
+        dampingVal = 24;
+        massVal = 0.8;
+        break;
+    }
+  }
+
   const [progress, setProgress] = useState(100);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [typeWasLoading, setTypeWasLoading] = useState(type === "loading");
+  const [expandedOpen, setExpandedOpen] = useState(false);
   const [timestamp] = useState(() => {
     const now = new Date();
     return now.toTimeString().split(" ")[0];
@@ -143,7 +229,9 @@ export default function Toast({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const previousTypeRef = useRef(type);
 
   const [dims, setDims] = useState({ pw: 160, bw: 340, th: 110 });
   const dimsRef = useRef(dims);
@@ -151,110 +239,151 @@ export default function Toast({
 
   const morphProgress = useMotionValue(0);
   const [currentPath, setCurrentPath] = useState(() =>
-    morphPathCenterRaw(160, 340, 110, 0),
+    morphPathCenterRaw(160, 340, 110, 0, align),
   );
-  const [revealDescription, setRevealDescription] = useState(
-    type !== "loading",
-  );
+  const [revealDescription, setRevealDescription] = useState(false);
 
-  // Sync path when dimensions update and animation is idle
   useEffect(() => {
-    if (variant !== "expanded") return;
+    if (!isExpandedVariant) return;
     const path = morphPathCenterRaw(
       dims.pw,
       dims.bw,
       dims.th,
       morphProgress.get(),
+      align,
     );
     setCurrentPath(path);
-  }, [dims, variant, morphProgress]);
+  }, [dims, isExpandedVariant, morphProgress, align]);
 
-  // Measure dimensions dynamically using a ResizeObserver on the wrapper
   useEffect(() => {
-    if (variant !== "expanded") return;
+    if (!isExpandedVariant) return;
+
     const measure = () => {
-      if (headerRef.current && bodyRef.current && containerRef.current) {
-        const pw = Math.max(120, headerRef.current.offsetWidth + 32); // Safe min width for title pill
-        const bw = Math.max(340, bodyRef.current.offsetWidth); // Safe min width for body wrapper
+      if (titleRef.current && bodyRef.current && containerRef.current) {
+        const pw = Math.max(120, titleRef.current.offsetWidth + 40); // extra padding for premium look
+        const bw = Math.max(340, bodyRef.current.offsetWidth);
         const th = Math.max(
-          isExpanded ? 95 : 36,
+          expandedOpen ? 95 : 36,
           containerRef.current.offsetHeight,
-        ); // Safe height min-bounds
+        );
         setDims({ pw, bw, th });
       }
     };
+
     measure();
     const resizeObserver = new ResizeObserver(measure);
     if (containerRef.current) resizeObserver.observe(containerRef.current);
     return () => resizeObserver.disconnect();
-  }, [variant, isExpanded, title, description]);
+  }, [
+    description,
+    expandedOpen,
+    isExpandedVariant,
+    showAction,
+    showTimestamp,
+    title,
+  ]);
 
-  // Spring morph the mathematical path coordinates
   useEffect(() => {
-    if (variant !== "expanded") return;
-    const controls = animate(morphProgress, isExpanded ? 1 : 0, {
+    if (!isExpandedVariant) return;
+
+    const controls = animate(morphProgress, expandedOpen ? 1 : 0, {
       type: "spring",
-      stiffness: springBounceToggle ? stiffness : 280,
-      damping: springBounceToggle ? damping : 18,
-      mass: springBounceToggle ? mass : 0.8,
+      stiffness: springBounceToggle ? stiffnessVal : 280,
+      damping: springBounceToggle ? dampingVal : 18,
+      mass: springBounceToggle ? massVal : 0.8,
       onUpdate: (latest) => {
         const path = morphPathCenterRaw(
           dimsRef.current.pw,
           dimsRef.current.bw,
           dimsRef.current.th,
           latest,
+          align,
         );
         setCurrentPath(path);
       },
     });
     return () => controls.stop();
   }, [
-    isExpanded,
-    variant,
-    springBounceToggle,
-    stiffness,
-    damping,
-    mass,
+    dampingVal,
+    expandedOpen,
+    isExpandedVariant,
+    massVal,
     morphProgress,
+    springBounceToggle,
+    stiffnessVal,
+    align,
   ]);
 
   useEffect(() => {
+    setProgress(100);
     const startTime = Date.now();
-    const timer = setInterval(() => {
+    const timer = window.setInterval(() => {
       const elapsed = Date.now() - startTime;
       const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
       setProgress(remaining);
 
       if (remaining === 0) {
-        clearInterval(timer);
+        window.clearInterval(timer);
         onClose(id);
       }
-    }, 10);
+    }, 50);
 
-    return () => clearInterval(timer);
-  }, [id, duration, onClose]);
+    return () => window.clearInterval(timer);
+  }, [duration, id, onClose]);
 
   useEffect(() => {
-    if (type === "loading") {
-      setIsExpanded(false);
+    if (!isExpandedVariant) {
+      setExpandedOpen(false);
       setRevealDescription(false);
-      setTypeWasLoading(true);
-      if (showDescription && description) {
-        const timer = setTimeout(() => {
-          setIsExpanded(true);
-          setRevealDescription(true);
-        }, 1500); // Give 1.5s compact spinner pill state first
-        return () => clearTimeout(timer);
-      }
-    } else {
-      setRevealDescription(true);
-      const delay = typeWasLoading ? 300 : 600;
-      const timer = setTimeout(() => {
-        setIsExpanded(true);
-      }, delay);
-      return () => clearTimeout(timer);
+      previousTypeRef.current = type;
+      return;
     }
-  }, [type, typeWasLoading, showDescription, description]);
+
+    const wasLoading = previousTypeRef.current === "loading";
+    previousTypeRef.current = type;
+
+    if (!hasExpandedBody) {
+      setExpandedOpen(false);
+      setRevealDescription(false);
+      return;
+    }
+
+    // Always start collapsed & hide description initially for a clean sequential sequence
+    setExpandedOpen(false);
+    setRevealDescription(false);
+
+    let expandTimer: number;
+    let revealTimer: number;
+
+    if (type === "loading") {
+      expandTimer = window.setTimeout(() => {
+        setExpandedOpen(true);
+        revealTimer = window.setTimeout(() => {
+          if (hasDescription) {
+            setRevealDescription(true);
+          }
+        }, 150); // slight offset to allow expansion slide to begin
+      }, LOADING_EXPANDED_DELAY_MS);
+    } else {
+      // Let the title pill show first, then slide/expand the toast background
+      expandTimer = window.setTimeout(
+        () => {
+          setExpandedOpen(true);
+          revealTimer = window.setTimeout(() => {
+            if (hasDescription) {
+              setRevealDescription(true);
+            }
+          }, 120); // starts emerging as the morph expands down
+        },
+        wasLoading ? 180 : 500,
+      ); // 500ms delay gives time for title to mount and settle
+    }
+
+    return () => {
+      window.clearTimeout(expandTimer);
+      window.clearTimeout(revealTimer);
+    };
+  }, [hasDescription, hasExpandedBody, isExpandedVariant, type]);
 
   useEffect(() => {
     if (!closeOnEscape) return;
@@ -267,25 +396,21 @@ export default function Toast({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [id, closeOnEscape, onClose]);
 
-  const isDark = theme === "dark";
-
-  // Unified spring transition config
-  const customTransition = springBounceToggle
+  const entryTransition = springBounceToggle
     ? {
         type: "spring",
-        stiffness: stiffness,
-        damping: damping,
-        mass: mass,
+        stiffness: stiffnessVal,
+        damping: dampingVal,
+        mass: massVal,
         delay: squishDelay / 1000,
       }
     : {
         type: "spring",
-        bounce: bounce,
-        duration: 0.6,
+        bounce,
+        duration: 0.45,
         delay: squishDelay / 1000,
       };
 
-  // Morph spring behavior for layout size updates
   const layoutTransition = {
     type: "spring",
     stiffness: 280,
@@ -293,180 +418,132 @@ export default function Toast({
     mass: 0.8,
   };
 
-  const fullTransition = {
-    default: customTransition,
-    layout: layoutTransition,
+  const bodyTransition = {
+    type: "spring" as const,
+    stiffness: springBounceToggle ? stiffnessVal : 280,
+    damping: springBounceToggle ? dampingVal : 18,
+    mass: springBounceToggle ? massVal : 0.8,
   };
 
-  // Elastic blob squish entry configuration
-  const entryInitial = {
+  const standardEntryInitial = {
     opacity: 0,
-    y: 50,
-    scaleX: 0.8,
-    scaleY: 1.2,
-    filter: "blur(10px)",
+    y: 24,
+    scale: 0.96,
     x: 0,
   };
 
-  const entryAnimate = {
+  const standardEntryAnimate = {
     opacity: 1,
     y: 0,
-    scaleX: [0.8, 1.15, 0.95, 1],
-    scaleY: [1.2, 0.85, 1.05, 1],
-    filter: "blur(0px)",
-    x: errorShake && type === "error" ? [0, -12, 12, -8, 8, -4, 4, 0] : 0,
+    scale: 1,
+    x: errorShake && type === "error" ? [0, -10, 10, -6, 6, 0] : 0,
     transition: {
-      ...customTransition,
+      ...entryTransition,
       x:
         errorShake && type === "error"
           ? {
-              duration: 0.4,
-              delay: (squishDelay + 150) / 1000,
+              duration: 0.34,
+              delay: (squishDelay + 120) / 1000,
               ease: "easeInOut",
             }
           : undefined,
     },
   };
 
-  // Dynamic style mapping: background and foreground per theme + type
-  const getStyles = () => {
-    // ── Card background ──────────────────────────────────────────────────────
-    let cardBg: string;
-    let strokeColor: string;
+  const expandedEntryInitial = {
+    opacity: 0,
+    y: 32,
+    scale: 0.92,
+    x: 0,
+    width: dims.pw,
+  };
 
-    if (theme === "light") {
-      // Light: always white card
-      cardBg = "#ffffff";
-      strokeColor = "rgba(0,0,0,0.06)";
-    } else if (theme === "custom") {
-      // Custom: use the brand color picker value as the background
-      cardBg = customColor || "#ff8c3b";
-      strokeColor = "rgba(255,255,255,0.15)";
-    } else {
-      // Dark (default): charcoal card for all types
-      cardBg = "#12131a";
-      strokeColor = "rgba(255,255,255,0.08)";
-    }
-
-    // ── Foreground base: derived from background luminance ────────────────────
-    const isLightBg = cardBg === "#ffffff";
-    // For custom, do a quick luminance check so white text works on dark brand colors
-    // and dark text works on light brand colors
-    const isCustomLightBg =
-      theme === "custom" &&
-      customColor != null &&
-      parseInt(customColor.slice(1), 16) > 0xaaaaaa;
-
-    const useDarkText = isLightBg || isCustomLightBg;
-
-    let titleColor = useDarkText ? "text-[#12131a]" : "text-white";
-    const descColor = useDarkText ? "text-[#12131a]/75" : "text-white/70";
-    let progressBg = useDarkText ? "bg-[#12131a]" : "bg-white";
-    const closeBtnColor = useDarkText
-      ? "text-[#12131a]/60 hover:bg-black/5"
-      : "text-white/60 hover:bg-white/10";
-    let iconColor = useDarkText ? "text-[#12131a]" : "text-white";
-
-    // ── Semantic title + icon overrides (applied on top of base) ─────────────
-    // These always win regardless of theme so the user can always identify type
-    switch (type) {
-      case "success":
-        titleColor = "text-success";
-        iconColor = "text-success";
-        progressBg = "bg-success";
-        break;
-      case "error":
-        titleColor = "text-error";
-        iconColor = "text-error";
-        progressBg = "bg-error";
-        break;
-      case "warning":
-        titleColor = "text-warning";
-        iconColor = "text-warning";
-        progressBg = "bg-warning";
-        break;
-      case "info":
-        titleColor = "text-info";
-        iconColor = "text-info";
-        progressBg = "bg-info";
-        break;
-      case "loading":
-        // Spinner color matches theme contrast
-        titleColor = useDarkText ? "text-accent" : "text-white";
-        iconColor = useDarkText ? "text-accent" : "text-white";
-        progressBg = useDarkText ? "bg-accent" : "bg-white";
-        break;
-      case "promise":
-        titleColor = "text-purple-400";
-        iconColor = "text-purple-400";
-        progressBg = "bg-purple-400";
-        break;
-      default:
-        // Default type: keep the base (no semantic override)
-        break;
-    }
-
-    return {
-      cardBg,
-      strokeColor,
-      titleColor,
-      descColor,
-      progressBg,
-      closeBtnColor,
-      iconColor,
-    };
+  const expandedEntryAnimate = {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    x: errorShake && type === "error" ? [0, -10, 10, -6, 6, 0] : 0,
+    width: expandedOpen ? dims.bw : dims.pw,
+    transition: {
+      ...entryTransition,
+      width: bodyTransition,
+      x:
+        errorShake && type === "error"
+          ? {
+              duration: 0.34,
+              delay: (squishDelay + 120) / 1000,
+              ease: "easeInOut",
+            }
+          : undefined,
+    },
   };
 
   const {
     cardBg,
     strokeColor,
     titleColor,
-    descColor,
-    progressBg,
-    closeBtnColor,
+    descriptionColor,
+    progressColor,
+    progressTrackColor,
+    closeColor,
     iconColor,
-  } = getStyles();
+    timestampColor,
+    baseTextColor,
+    shadow,
+  } = resolveToastVisuals({
+    theme,
+    customColor,
+    type,
+  });
 
-  // Helper to render the appropriate Lucide icon with dynamic color and size
-  const renderIcon = (sizeClass: string, colorClass: string) => {
-    const iconProps = { className: `${sizeClass} ${colorClass}` };
+  const renderIcon = (sizeClass: string) => {
+    const iconStyle = { color: iconColor };
     switch (type) {
       case "success":
-        return <CheckCircle2 {...iconProps} />;
+        return <CheckCircle2 className={sizeClass} style={iconStyle} />;
       case "error":
-        return <AlertCircle {...iconProps} />;
+        return <AlertCircle className={sizeClass} style={iconStyle} />;
       case "warning":
-        return <AlertTriangle {...iconProps} />;
+        return <AlertTriangle className={sizeClass} style={iconStyle} />;
       case "info":
-        return <Info {...iconProps} />;
+        return <Info className={sizeClass} style={iconStyle} />;
       case "loading":
         return (
-          <Loader2 className={`${sizeClass} animate-spin ${colorClass}`} />
+          <Loader2 className={`${sizeClass} animate-spin`} style={iconStyle} />
         );
       case "promise":
         return (
-          <Sparkles className={`${sizeClass} animate-pulse ${colorClass}`} />
+          <Sparkles
+            className={`${sizeClass} animate-pulse`}
+            style={iconStyle}
+          />
         );
       case "default":
       default:
-        if (variant === "expanded") {
-          return <Bell {...iconProps} />;
+        if (isExpandedVariant) {
+          return <Bell className={sizeClass} style={iconStyle} />;
         }
         return null;
     }
   };
 
-  // Premium Gooey Expanded Double-Bubble layout
-  if (variant === "expanded") {
+  const titleAnimationDelay = (squishDelay + 50) / 1000;
+  const descriptionAnimationDelay = (squishDelay + 140) / 1000;
+  const contentKey = `${type}-${title}-${description ?? ""}-${showAction ? actionText : ""}`;
+
+  if (isExpandedVariant) {
     return (
       <motion.div
         ref={containerRef}
         layout
-        initial={entryInitial}
-        animate={entryAnimate}
+        initial={expandedEntryInitial}
+        animate={expandedEntryAnimate}
         exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-        transition={fullTransition}
-        className="relative flex flex-col items-center pointer-events-auto group min-w-[340px] max-w-[420px]"
+        transition={{
+          default: entryTransition,
+          layout: layoutTransition,
+        }}
+        className="relative flex flex-col items-center pointer-events-auto group max-w-[420px]"
       >
         {/* Crisp, Sharp Organic Morphing Bezier SVG Background */}
         <svg
@@ -484,72 +561,88 @@ export default function Toast({
           />
         </svg>
 
-        {/* Foreground Content */}
         <div className="relative z-10 w-full flex flex-col items-center select-none">
-          {/* Top Title/Icon Bar */}
           <motion.div
+            key={`header-${contentKey}`}
             ref={headerRef}
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.3,
-              delay:
-                (squishDelay + (titleDescriptionSimultaneous ? 0 : 50)) / 1000,
+            initial={{
+              opacity: 0,
+              y: -4,
+              width: dims.pw,
+              ...(align === "left"
+                ? { left: 0 }
+                : { left: "50%", x: "-50%" }),
             }}
-            className="h-9 flex items-center justify-center gap-1.5 px-4"
+            animate={{
+              opacity: 1,
+              y: 0,
+              width: dims.pw,
+              ...(align === "left"
+                ? { left: 0 }
+                : { left: "50%", x: "-50%" }),
+            }}
+            transition={{
+              width: bodyTransition,
+              left: bodyTransition,
+              right: bodyTransition,
+              x: bodyTransition,
+              default: { duration: 0.28, delay: titleAnimationDelay },
+            }}
+            className="absolute top-0 h-9 flex items-center justify-center overflow-hidden z-20"
           >
-            {renderIcon("w-4 h-4", iconColor)}
-            <span
-              className={`text-[11px] font-extrabold tracking-wide uppercase ${titleColor}`}
+            <div
+              ref={titleRef}
+              className={`flex items-center gap-1.5 whitespace-nowrap h-full w-full ${
+                align === "center"
+                  ? "justify-center px-4"
+                  : "justify-start px-5"
+              }`}
             >
-              {title}
-            </span>
+              {renderIcon("w-4 h-4")}
+              <span
+                className="text-[11px] font-extrabold tracking-wide uppercase"
+                style={{ color: titleColor }}
+              >
+                {title}
+              </span>
+            </div>
           </motion.div>
 
-          {/* Bottom Content Area */}
           <motion.div
             ref={bodyRef}
             layout
             animate={{
-              height: isExpanded ? "auto" : 0,
-              opacity: isExpanded ? 1 : 0,
-              scale: isExpanded ? 1 : 0.8,
+              height: expandedOpen ? "auto" : 0,
+              opacity: expandedOpen ? 1 : 0,
+              scale: expandedOpen ? 1 : 0.92,
             }}
-            transition={{
-              type: "spring",
-              stiffness: 300,
-              damping: 22,
-            }}
-            className="w-full overflow-hidden"
+            transition={bodyTransition}
+            className="w-full overflow-hidden mt-9"
           >
-            <div className="w-full pt-1 pb-4 px-5 flex items-center justify-between gap-4 mt-2">
+            <div className="w-[340px] max-w-full pt-1 pb-4 px-5 flex items-center justify-between gap-4 mt-2">
               <div className="flex-1 min-w-0">
-                {revealDescription && (
+                {hasDescription && revealDescription && (
                   <motion.p
-                    initial={{ opacity: 0, y: 4 }}
+                    key={`expanded-description-${contentKey}`}
+                    initial={{ opacity: 0, y: -16 }} // slide down from the toast title
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
-                      duration: 0.3,
-                      delay:
-                        (squishDelay +
-                          (titleDescriptionSimultaneous ? 0 : 150)) /
-                        1000,
+                      type: "spring",
+                      stiffness: 160,
+                      damping: 14,
                     }}
-                    className={`text-xs font-semibold leading-relaxed ${descColor}`}
+                    className="text-xs font-semibold leading-relaxed"
+                    style={{ color: descriptionColor }}
                   >
-                    {description || "System warning active."}
+                    {description}
                   </motion.p>
                 )}
                 {showAction && actionText && (
                   <div className="mt-2">
                     <button
+                      type="button"
                       onClick={() => onClose(id)}
                       className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider bg-accent text-white hover:opacity-90 transition-opacity"
-                      style={
-                        customColor
-                          ? { backgroundColor: customColor }
-                          : undefined
-                      }
                     >
                       {actionText}
                     </button>
@@ -558,7 +651,10 @@ export default function Toast({
               </div>
 
               {showTimestamp && (
-                <span className="text-[10px] font-bold text-text-3 font-mono flex-shrink-0">
+                <span
+                  className="text-[10px] font-bold font-mono flex-shrink-0"
+                  style={{ color: timestampColor }}
+                >
                   {timestamp}
                 </span>
               )}
@@ -566,11 +662,14 @@ export default function Toast({
           </motion.div>
         </div>
 
-        {/* Progress Bar */}
-        {showProgress && isExpanded && (
-          <div className="absolute bottom-0 left-4 right-4 h-1 bg-white/10 rounded-full overflow-hidden z-20">
+        {showProgress && expandedOpen && (
+          <div
+            className="absolute bottom-0 left-4 right-4 h-1 rounded-full overflow-hidden z-20"
+            style={{ backgroundColor: progressTrackColor }}
+          >
             <motion.div
-              className={`h-full ${progressBg}`}
+              className="h-full"
+              style={{ backgroundColor: progressColor }}
               initial={{ width: "100%" }}
               animate={{ width: `${progress}%` }}
               transition={{ ease: "linear" }}
@@ -578,11 +677,12 @@ export default function Toast({
           </div>
         )}
 
-        {/* Close Button */}
-        {showCloseButton && isExpanded && (
+        {showCloseButton && expandedOpen && (
           <button
+            type="button"
             onClick={() => onClose(id)}
-            className={`absolute top-[32px] right-3.5 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 z-30 ${closeBtnColor}`}
+            className="absolute top-[32px] right-3.5 p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:opacity-100 transition-all duration-200 z-30"
+            style={{ color: closeColor }}
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -591,64 +691,60 @@ export default function Toast({
     );
   }
 
-  // isBgDark mirrors the same logic used inside getStyles()
-  const isBgDark = cardBg !== "#ffffff";
-
   return (
     <motion.div
       layout
-      initial={entryInitial}
-      animate={entryAnimate}
+      initial={standardEntryInitial}
+      animate={standardEntryAnimate}
       exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-      transition={fullTransition}
-      className={`toast group ${hasBorder === false ? "!border-transparent" : ""}`}
+      transition={{
+        default: entryTransition,
+        layout: layoutTransition,
+      }}
+      className={`toast group ${hasBorder ? "" : "!border-transparent"}`}
       style={{
         backgroundColor: cardBg,
         borderColor: strokeColor,
-        color: isBgDark ? "#ffffff" : "#12131a",
-        boxShadow: isBgDark
-          ? "0 10px 40px rgba(0,0,0,0.22)"
-          : "0 10px 40px rgba(0,0,0,0.10)",
+        color: baseTextColor,
+        boxShadow: shadow,
       }}
     >
       <div className="flex gap-3 w-full items-start">
-        {renderIcon("w-5 h-5", iconColor) && (
-          <div className="mt-0.5 flex-shrink-0">
-            {renderIcon("w-5 h-5", iconColor)}
-          </div>
+        {renderIcon("w-5 h-5") && (
+          <div className="mt-0.5 flex-shrink-0">{renderIcon("w-5 h-5")}</div>
         )}
 
         <div className="flex-1 min-w-0">
           <motion.div
+            key={`title-${contentKey}`}
             initial={{ opacity: 0, y: 3 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.3,
-              delay:
-                (squishDelay + (titleDescriptionSimultaneous ? 0 : 50)) / 1000,
-            }}
+            transition={{ duration: 0.28, delay: titleAnimationDelay }}
             className="flex items-center gap-1.5 flex-wrap"
           >
             {showTimestamp && (
-              <span className="text-[10px] font-bold text-text-3 font-mono">
+              <span
+                className="text-[10px] font-bold font-mono"
+                style={{ color: timestampColor }}
+              >
                 [{timestamp}]
               </span>
             )}
-            <h4 className={`text-sm font-semibold truncate ${titleColor}`}>
+            <h4
+              className="text-sm font-semibold truncate"
+              style={{ color: titleColor }}
+            >
               {title}
             </h4>
           </motion.div>
-          {showDescription && description && revealDescription && (
+          {hasDescription && (
             <motion.p
+              key={`description-${contentKey}`}
               initial={{ opacity: 0, y: 3 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.3,
-                delay:
-                  (squishDelay + (titleDescriptionSimultaneous ? 0 : 150)) /
-                  1000,
-              }}
-              className={`mt-1 text-xs leading-relaxed line-clamp-2 ${descColor}`}
+              transition={{ duration: 0.28, delay: descriptionAnimationDelay }}
+              className="mt-1 text-xs leading-relaxed line-clamp-2"
+              style={{ color: descriptionColor }}
             >
               {description}
             </motion.p>
@@ -656,11 +752,9 @@ export default function Toast({
           {showAction && actionText && (
             <div className="mt-2">
               <button
+                type="button"
                 onClick={() => onClose(id)}
                 className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-accent text-white hover:opacity-90 transition-opacity"
-                style={
-                  customColor ? { backgroundColor: customColor } : undefined
-                }
               >
                 {actionText}
               </button>
@@ -670,8 +764,10 @@ export default function Toast({
 
         {showCloseButton && (
           <button
+            type="button"
             onClick={() => onClose(id)}
-            className={`p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 ${closeBtnColor}`}
+            className="p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:opacity-100 transition-all duration-200"
+            style={{ color: closeColor }}
           >
             <X className="w-4 h-4" />
           </button>
@@ -681,14 +777,11 @@ export default function Toast({
       {showProgress && (
         <div
           className="absolute bottom-0 left-0 right-0 h-1"
-          style={{
-            background: isBgDark
-              ? "rgba(255,255,255,0.18)"
-              : "rgba(0,0,0,0.07)",
-          }}
+          style={{ backgroundColor: progressTrackColor }}
         >
           <motion.div
-            className={`h-full ${progressBg}`}
+            className="h-full"
+            style={{ backgroundColor: progressColor }}
             initial={{ width: "100%" }}
             animate={{ width: `${progress}%` }}
             transition={{ ease: "linear" }}

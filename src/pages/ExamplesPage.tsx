@@ -26,7 +26,8 @@ type Category =
   | "Layouts"
   | "Advanced"
   | "Easing"
-  | "Promises";
+  | "Promises"
+  | "Expanded";
 
 export default function ExamplesPage() {
   const { addToast, updateToast } = useToasts();
@@ -784,6 +785,7 @@ export default function ExamplesPage() {
         showCloseButton: true,
         position: "bottom-right" as const,
         type: "loading" as const,
+        variant: "expanded" as const,
       },
       action: () => {
         const id = addToast({
@@ -791,6 +793,7 @@ export default function ExamplesPage() {
           title: "Resolving DNS records...",
           description: "Contacting server...",
           showDescription: true,
+          variant: "expanded",
           duration: 8000,
         });
         setTimeout(() => {
@@ -799,6 +802,7 @@ export default function ExamplesPage() {
             title: "DNS Resolution Failed",
             description: "Network timeout connecting to public registry.",
             showDescription: true,
+            variant: "expanded",
           });
         }, 2500);
       },
@@ -828,6 +832,7 @@ export default function ExamplesPage() {
         showCloseButton: true,
         position: "bottom-right" as const,
         type: "loading" as const,
+        variant: "expanded" as const,
       },
       action: () => {
         const id = addToast({
@@ -835,6 +840,7 @@ export default function ExamplesPage() {
           title: "Syncing user workspace...",
           description: "Uploading details...",
           showDescription: true,
+          variant: "expanded",
           duration: 8000,
         });
         setTimeout(() => {
@@ -843,6 +849,7 @@ export default function ExamplesPage() {
             title: "Workspace Fully Synced",
             description: "All 12 modified files updated successfully.",
             showDescription: true,
+            variant: "expanded",
           });
         }, 2500);
       },
@@ -968,7 +975,7 @@ export default function ExamplesPage() {
     {
       id: 26,
       title: "Storage Warning (Expanded)",
-      category: "Layouts",
+      category: "Expanded",
       desc: "Morphed double-bubble gooey warning toast replicating premium system alerts.",
       tags: ["Morphic", "Expanded", "Warning"],
       likes: 620,
@@ -997,6 +1004,123 @@ export default function ExamplesPage() {
           type: "warning",
           title: "Storage warning",
           description: "You are using 95% of your available storage.",
+          showDescription: true,
+          showTimestamp: true,
+          variant: "expanded",
+        }),
+    },
+    {
+      id: 27,
+      title: "Build Success (Expanded)",
+      category: "Expanded",
+      desc: "Expanded success notification displaying dynamic deploy status with rich contrast rendering.",
+      tags: ["Success", "Expanded", "Deploy"],
+      likes: 712,
+      icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />,
+      color: "bg-emerald-500/10 border-emerald-500/20 text-emerald-500",
+      builderConfig: {
+        title: "Production Build Succeeded",
+        description:
+          "All bundle assets have been successfully optimized and compiled to static CDN locations.",
+        showDescription: true,
+        showAction: false,
+        actionText: "Undo",
+        customColor: "#10b981",
+        hasBorder: true,
+        bounce: 0.4,
+        theme: "light" as const,
+        showProgress: true,
+        closeOnEscape: false,
+        showTimestamp: true,
+        showCloseButton: true,
+        position: "bottom-right" as const,
+        type: "success" as const,
+        variant: "expanded" as const,
+      },
+      action: () =>
+        addToast({
+          type: "success",
+          title: "Production Build Succeeded",
+          description:
+            "All bundle assets have been successfully optimized and compiled to static CDN locations.",
+          showDescription: true,
+          showTimestamp: true,
+          variant: "expanded",
+        }),
+    },
+    {
+      id: 28,
+      title: "Connection Failure (Expanded)",
+      category: "Expanded",
+      desc: "High contrast expanded error notification featuring rapid error status and visual red cues.",
+      tags: ["Error", "Expanded", "System"],
+      likes: 549,
+      icon: <ShieldAlert className="w-5 h-5 text-rose-500" />,
+      color: "bg-rose-500/10 border-rose-500/20 text-rose-500",
+      builderConfig: {
+        title: "Database Sync Offline",
+        description:
+          "Failed to establish a secure handshake with the primary cloud replica. Offline changes are stored locally.",
+        showDescription: true,
+        showAction: false,
+        actionText: "Undo",
+        customColor: "#ef4444",
+        hasBorder: true,
+        bounce: 0.5,
+        theme: "dark" as const,
+        showProgress: true,
+        closeOnEscape: false,
+        showTimestamp: true,
+        showCloseButton: true,
+        position: "bottom-right" as const,
+        type: "error" as const,
+        variant: "expanded" as const,
+      },
+      action: () =>
+        addToast({
+          type: "error",
+          title: "Database Sync Offline",
+          description:
+            "Failed to establish a secure handshake with the primary cloud replica. Offline changes are stored locally.",
+          showDescription: true,
+          showTimestamp: true,
+          variant: "expanded",
+        }),
+    },
+    {
+      id: 29,
+      title: "System Update (Expanded)",
+      category: "Expanded",
+      desc: "Mated blue micro-timing notification informing user of system background actions.",
+      tags: ["Info", "Expanded", "Scheduler"],
+      likes: 428,
+      icon: <Clock className="w-5 h-5 text-blue-500" />,
+      color: "bg-blue-500/10 border-blue-500/20 text-blue-500",
+      builderConfig: {
+        title: "Index Optimization Running",
+        description:
+          "System database indexes are being rebuilt and compacted in the background. Performance might fluctuate.",
+        showDescription: true,
+        showAction: false,
+        actionText: "Undo",
+        customColor: "#3b82f6",
+        hasBorder: true,
+        bounce: 0.4,
+        theme: "light" as const,
+        showProgress: true,
+        closeOnEscape: false,
+        showTimestamp: true,
+        showCloseButton: true,
+        position: "bottom-right" as const,
+        type: "info" as const,
+        variant: "expanded" as const,
+      },
+      action: () =>
+        addToast({
+          type: "info",
+          title: "Index Optimization Running",
+          description:
+            "System database indexes are being rebuilt and compacted in the background. Performance might fluctuate.",
           showDescription: true,
           showTimestamp: true,
           variant: "expanded",
@@ -1064,6 +1188,7 @@ export default function ExamplesPage() {
                 "Advanced",
                 "Easing",
                 "Promises",
+                "Expanded",
               ] as Category[]
             ).map((cat) => (
               <button
